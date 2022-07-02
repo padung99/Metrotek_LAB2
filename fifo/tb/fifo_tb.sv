@@ -1,17 +1,16 @@
 `timescale 1 ps / 1 ps
 module fifo_tb;
 
-parameter DWIDTH_TB             = 8;
-parameter AWIDTH_TB             = 2;
+parameter DWIDTH_TB             = 16;
+parameter AWIDTH_TB             = 4;
 parameter SHOWAHEAD_TB          = 1;
-parameter ALMOST_FULL_VALUE_TB  = 2**AWIDTH_TB-1;
-parameter ALMOST_EMPTY_VALUE_TB = 1;
+parameter ALMOST_FULL_VALUE_TB  = 2**AWIDTH_TB-3;
+parameter ALMOST_EMPTY_VALUE_TB = 3;
 parameter REGISTER_OUTPUT_TB    = 0;
 
 parameter MAX_DATA_SEND         = 100;
 
 bit   clk_i_tb;
-bit   rst_done;
 
 logic                 srst_i_tb;
 logic [DWIDTH_TB-1:0] data_i_tb;
@@ -25,6 +24,7 @@ logic [AWIDTH_TB-1:0] usedw_o_tb;
 
 logic                 almost_full_o_tb;  
 logic                 almost_empty_o_tb;
+int cnt_wr_data;
 
 initial
   forever
@@ -76,66 +76,96 @@ task wr_fifo ( mailbox #( logic [DWIDTH_TB-1:0] ) _gen_data,
                mailbox #( logic [DWIDTH_TB-1:0] ) _data_s
              );
 logic [DWIDTH_TB-1:0] data_wr;
+int pause_wr;
+
 while( _gen_data.num() != 0 )
   begin
-    _gen_data.get( data_wr );
-    wrreq_i_tb = $urandom_range( 1,0 );
+    if( pause_wr == 0 )
+      begin
+        cnt_wr_data++;
+        _gen_data.get( data_wr );
+        pause_wr   = $urandom_range( 6,1 );
+        wrreq_i_tb = $urandom_range( 1,0 );
+      end
 
     if( full_o_tb == 1'b0 && wrreq_i_tb == 1'b1 )
       begin
         _data_s.put( data_wr );
         data_i_tb = data_wr;
       end
+    pause_wr--;
     ##1;
   end
 endtask
 
 task rd_fifo ( mailbox #( logic [DWIDTH_TB-1:0] ) _rd_data );
 
-for( int i = 0; i < MAX_DATA_SEND; i++ )
+int pause_rd;
+int i;
+i = 0;
+while( cnt_wr_data < MAX_DATA_SEND )
   begin
-    
-    rdreq_i_tb = $urandom_range( 1,0 );
-    if( empty_o_tb == 1'b0 && rdreq_i_tb == 1'b1 )
+    if( pause_rd == 0 )
       begin
-        _rd_data.put( q_o_tb );
+        pause_rd   = $urandom_range( 6,1 );
+        rdreq_i_tb = $urandom_range( 1,0 );
       end
+    if( empty_o_tb == 1'b0 && rdreq_i_tb == 1'b1 )
+      _rd_data.put( q_o_tb );
+    pause_rd--;
     ##1;
-  end
 
+  end
 endtask
 
 task testing ( mailbox #( logic [DWIDTH_TB-1:0] ) _rd_data,
                mailbox #( logic [DWIDTH_TB-1:0] ) _data_s
              );
+logic [DWIDTH_TB-1:0] new_rd_data;
+logic [DWIDTH_TB-1:0] new_data_s;
+int total_data_send;
+total_data_send = _data_s.num();
 
 while( _rd_data.num() != 0 && _data_s.num() != 0 )
   begin
-    logic [DWIDTH_TB-1:0] new_rd_data;
-    logic [DWIDTH_TB-1:0] new_data_s;
     _rd_data.get( new_rd_data );
     _data_s.get( new_data_s );
-    $display("[%0d] Send: %x, receive: %x",_rd_data.num(), new_data_s, new_rd_data );
+    $display("[%0d] Send: %x, read: %x",_rd_data.num(), new_data_s, new_rd_data );
 
     if( new_rd_data != new_data_s )
       begin
         $display("Data error!!!!\n");
+        $stop();
       end
     else
-      begin
-        $display( "Module runs correctly!!!\n" );
-      end
+      $display( "Module runs correctly!!!\n" );
   end
 
+$display( "Total data send: %0d", total_data_send - _data_s.num() );
+
 if( _data_s.num() != 0 )
-  $display("%0d more data in sending mailbox!!!", _data_s.num() );
+  begin
+    $display("%0d more data in sending mailbox!!!", _data_s.num() );
+    while( _data_s.num() != 0 )
+      begin
+        _data_s.get( new_data_s );
+        $display("%x", new_data_s );
+      end      
+  end
 else
   $display("Sending mailbox is empty!!!");
 
 if( _rd_data.num() != 0 )
-  $display("%0d more data in receiving mailbox!!!", _rd_data.num() );
+  begin
+    $display("%0d more data in reading mailbox!!!", _rd_data.num() );
+    while( _rd_data.num() != 0 )
+      begin
+        _rd_data.get( new_rd_data );
+        $display("%x", new_rd_data );
+      end  
+  end
 else
-  $display("Receiving mailbox is empty!!!");
+  $display("Reading mailbox is empty!!!");
 endtask
 
 initial
