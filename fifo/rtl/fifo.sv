@@ -1,10 +1,10 @@
 module fifo #(
   parameter DWIDTH             = 16,
   parameter AWIDTH             = 8,
-  parameter SHOWAHEAD          = 1,
+  parameter SHOWAHEAD          = "ON",
   parameter ALMOST_FULL_VALUE  = 240,
   parameter ALMOST_EMPTY_VALUE = 15,
-  parameter REGISTER_OUTPUT    = 0
+  parameter REGISTER_OUTPUT    = "OFF"
 ) (
   input  logic              clk_i,
   input  logic              srst_i,
@@ -22,13 +22,13 @@ module fifo #(
 );
 
 scfifo #(
-  .add_ram_output_register ( "OFF"               ),
+  .add_ram_output_register ( REGISTER_OUTPUT     ),
   .almost_empty_value      ( ALMOST_EMPTY_VALUE  ),
   .almost_full_value       ( ALMOST_FULL_VALUE   ),
   .intended_device_family  ( "Cyclone V"         ),
   .lpm_hint                ("RAM_BLOCK_TYPE=M10K"),
   .lpm_numwords            ( 2**AWIDTH           ),
-  .lpm_showahead           ( "ON"                ),
+  .lpm_showahead           ( SHOWAHEAD           ),
   .lpm_type                ( "scfifo"            ),
   .lpm_width               ( DWIDTH              ),
   .lpm_widthu              ( AWIDTH              ),

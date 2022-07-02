@@ -3,10 +3,10 @@ module fifo_tb;
 
 parameter DWIDTH_TB             = 16;
 parameter AWIDTH_TB             = 4;
-parameter SHOWAHEAD_TB          = 1;
+parameter SHOWAHEAD_TB          = "ON";
 parameter ALMOST_FULL_VALUE_TB  = 2**AWIDTH_TB-3;
 parameter ALMOST_EMPTY_VALUE_TB = 3;
-parameter REGISTER_OUTPUT_TB    = 0;
+parameter REGISTER_OUTPUT_TB    = "OFF";
 
 parameter MAX_DATA_SEND         = 100;
 
@@ -110,7 +110,8 @@ while( cnt_wr_data < MAX_DATA_SEND )
         pause_rd   = $urandom_range( 6,1 );
         rdreq_i_tb = $urandom_range( 1,0 );
       end
-    if( empty_o_tb == 1'b0 && rdreq_i_tb == 1'b1 )
+    //Using conditon q_o_tb >= (DWIDTH_TB)'(0) to ignore Unknow value 'X' when change parameter showahead to "OFF"
+    if( empty_o_tb == 1'b0 && rdreq_i_tb == 1'b1 && q_o_tb >= (DWIDTH_TB)'(0) ) 
       _rd_data.put( q_o_tb );
     pause_rd--;
     ##1;
@@ -134,7 +135,7 @@ while( _rd_data.num() != 0 && _data_s.num() != 0 )
 
     if( new_rd_data != new_data_s )
       begin
-        $display("Data error!!!!\n");
+        $display("Module runs with errors!!!!\n");
         $stop();
       end
     else
