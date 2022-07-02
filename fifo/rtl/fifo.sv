@@ -35,7 +35,7 @@ scfifo #(
   .overflow_checking       ( "ON"                ),
   .underflow_checking      ( "ON"                ),
   .use_eab                 ( "ON"                )
-) scfifo_inst (
+) golden_model (
   .clock        ( clk_i          ),
   .data         ( data_i         ),
   .rdreq        ( rdreq_i        ),

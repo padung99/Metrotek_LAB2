@@ -4,7 +4,7 @@
 // MODULE: scfifo 
 
 // ============================================================
-// File Name: fifo_ip.v
+// File Name: fifo_ip_catalog.v
 // Megafunction Name(s):
 // 			scfifo
 //
@@ -36,72 +36,72 @@
 // synopsys translate_off
 `timescale 1 ps / 1 ps
 // synopsys translate_on
-module fifo_ip (
-    clock,
-    data,
-    rdreq,
-    sclr,
-    wrreq,
-    almost_empty,
-    almost_full,
-    empty,
-    full,
-    q,
-    usedw);
+module fifo_ip_catalog (
+	clock,
+	data,
+	rdreq,
+	sclr,
+	wrreq,
+	almost_empty,
+	almost_full,
+	empty,
+	full,
+	q,
+	usedw);
 
-    input	  clock;
-    input	[7:0]  data;
-    input	  rdreq;
-    input	  sclr;
-    input	  wrreq;
-    output	  almost_empty;
-    output	  almost_full;
-    output	  empty;
-    output	  full;
-    output	[7:0]  q;
-    output	[7:0]  usedw;
+	input	  clock;
+	input	[7:0]  data;
+	input	  rdreq;
+	input	  sclr;
+	input	  wrreq;
+	output	  almost_empty;
+	output	  almost_full;
+	output	  empty;
+	output	  full;
+	output	[7:0]  q;
+	output	[7:0]  usedw;
 
-    wire  sub_wire0;
-    wire  sub_wire1;
-    wire  sub_wire2;
-    wire  sub_wire3;
-    wire [7:0] sub_wire4;
-    wire [7:0] sub_wire5;
-    wire  almost_empty = sub_wire0;
-    wire  almost_full = sub_wire1;
-    wire  empty = sub_wire2;
-    wire  full = sub_wire3;
-    wire [7:0] q = sub_wire4[7:0];
-    wire [7:0] usedw = sub_wire5[7:0];
+	wire  sub_wire0;
+	wire  sub_wire1;
+	wire  sub_wire2;
+	wire  sub_wire3;
+	wire [7:0] sub_wire4;
+	wire [7:0] sub_wire5;
+	wire  almost_empty = sub_wire0;
+	wire  almost_full = sub_wire1;
+	wire  empty = sub_wire2;
+	wire  full = sub_wire3;
+	wire [7:0] q = sub_wire4[7:0];
+	wire [7:0] usedw = sub_wire5[7:0];
 
-    scfifo	scfifo_component (
-                .clock (clock),
-                .data (data),
-                .rdreq (rdreq),
-                .sclr (sclr),
-                .wrreq (wrreq),
-                .almost_empty (sub_wire0),
-                .almost_full (sub_wire1),
-                .empty (sub_wire2),
-                .full (sub_wire3),
-                .q (sub_wire4),
-                .usedw (sub_wire5),
-                .aclr (),
-                .eccstatus ());
-    defparam
-        scfifo_component.add_ram_output_register = "OFF",
-        scfifo_component.almost_empty_value = 15,
-        scfifo_component.almost_full_value = 240,
-        scfifo_component.intended_device_family = "Cyclone V",
-        scfifo_component.lpm_hint = "RAM_BLOCK_TYPE=M10K",
-        scfifo_component.lpm_numwords = 256,
-        scfifo_component.lpm_showahead = "ON",
-        scfifo_component.lpm_type = "scfifo",
-        scfifo_component.lpm_width = 8,
-        scfifo_component.lpm_widthu = 8,
-        scfifo_component.overflow_checking = "ON",
-        scfifo_component.underflow_checking = "ON",
-        scfifo_component.use_eab = "ON";
+	scfifo	scfifo_component (
+				.clock (clock),
+				.data (data),
+				.rdreq (rdreq),
+				.sclr (sclr),
+				.wrreq (wrreq),
+				.almost_empty (sub_wire0),
+				.almost_full (sub_wire1),
+				.empty (sub_wire2),
+				.full (sub_wire3),
+				.q (sub_wire4),
+				.usedw (sub_wire5),
+				.aclr (),
+				.eccstatus ());
+	defparam
+		scfifo_component.add_ram_output_register = "OFF",
+		scfifo_component.almost_empty_value = 5,
+		scfifo_component.almost_full_value = 250,
+		scfifo_component.intended_device_family = "Cyclone V",
+		scfifo_component.lpm_hint = "RAM_BLOCK_TYPE=M10K",
+		scfifo_component.lpm_numwords = 256,
+		scfifo_component.lpm_showahead = "ON",
+		scfifo_component.lpm_type = "scfifo",
+		scfifo_component.lpm_width = 8,
+		scfifo_component.lpm_widthu = 8,
+		scfifo_component.overflow_checking = "ON",
+		scfifo_component.underflow_checking = "ON",
+		scfifo_component.use_eab = "ON";
 
 
 endmodule
@@ -110,9 +110,9 @@ endmodule
 // CNX file retrieval info
 // ============================================================
 // Retrieval info: PRIVATE: AlmostEmpty NUMERIC "1"
-// Retrieval info: PRIVATE: AlmostEmptyThr NUMERIC "15"
+// Retrieval info: PRIVATE: AlmostEmptyThr NUMERIC "5"
 // Retrieval info: PRIVATE: AlmostFull NUMERIC "1"
-// Retrieval info: PRIVATE: AlmostFullThr NUMERIC "240"
+// Retrieval info: PRIVATE: AlmostFullThr NUMERIC "250"
 // Retrieval info: PRIVATE: CLOCKS_ARE_SYNCHRONIZED NUMERIC "0"
 // Retrieval info: PRIVATE: Clock NUMERIC "0"
 // Retrieval info: PRIVATE: Depth NUMERIC "256"
@@ -143,8 +143,8 @@ endmodule
 // Retrieval info: PRIVATE: wsUsedW NUMERIC "0"
 // Retrieval info: LIBRARY: altera_mf altera_mf.altera_mf_components.all
 // Retrieval info: CONSTANT: ADD_RAM_OUTPUT_REGISTER STRING "OFF"
-// Retrieval info: CONSTANT: ALMOST_EMPTY_VALUE NUMERIC "15"
-// Retrieval info: CONSTANT: ALMOST_FULL_VALUE NUMERIC "240"
+// Retrieval info: CONSTANT: ALMOST_EMPTY_VALUE NUMERIC "5"
+// Retrieval info: CONSTANT: ALMOST_FULL_VALUE NUMERIC "250"
 // Retrieval info: CONSTANT: INTENDED_DEVICE_FAMILY STRING "Cyclone V"
 // Retrieval info: CONSTANT: LPM_HINT STRING "RAM_BLOCK_TYPE=M10K"
 // Retrieval info: CONSTANT: LPM_NUMWORDS NUMERIC "256"
@@ -177,10 +177,10 @@ endmodule
 // Retrieval info: CONNECT: full 0 0 0 0 @full 0 0 0 0
 // Retrieval info: CONNECT: q 0 0 8 0 @q 0 0 8 0
 // Retrieval info: CONNECT: usedw 0 0 8 0 @usedw 0 0 8 0
-// Retrieval info: GEN_FILE: TYPE_NORMAL fifo_ip.v TRUE
-// Retrieval info: GEN_FILE: TYPE_NORMAL fifo_ip.inc FALSE
-// Retrieval info: GEN_FILE: TYPE_NORMAL fifo_ip.cmp FALSE
-// Retrieval info: GEN_FILE: TYPE_NORMAL fifo_ip.bsf FALSE
-// Retrieval info: GEN_FILE: TYPE_NORMAL fifo_ip_inst.v TRUE
-// Retrieval info: GEN_FILE: TYPE_NORMAL fifo_ip_bb.v TRUE
+// Retrieval info: GEN_FILE: TYPE_NORMAL fifo_ip_catalog.v TRUE
+// Retrieval info: GEN_FILE: TYPE_NORMAL fifo_ip_catalog.inc FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL fifo_ip_catalog.cmp FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL fifo_ip_catalog.bsf FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL fifo_ip_catalog_inst.v FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL fifo_ip_catalog_bb.v FALSE
 // Retrieval info: LIB_FILE: altera_mf
