@@ -7,7 +7,7 @@ module fifo #(
   parameter REGISTER_OUTPUT    = 0
 ) (
   input  logic              clk_i,
-  input  logic              srt_i,
+  input  logic              srst_i,
   input  logic [DWIDTH-1:0] data_i,
 
   input  logic              wrreq_i,
@@ -21,49 +21,34 @@ module fifo #(
   output logic              almost_empty_o
 );
 
-// fifo_ip	fifo_ip_inst (
-//     .clock ( clk_i ),
-//     .data ( data_i ),
-//     .rdreq ( rdreq_i ),
-//     .sclr ( srt_i ),
-//     .wrreq ( wrreq_i ),
-//     .almost_empty ( almost_empty_o ),
-//     .almost_full ( almost_full_o ),
-//     .empty ( empty_o ),
-//     .full ( full_o),
-//     .q ( q_o ),
-//     .usedw ( usedw_o )
-//     );
-
-  scfifo #(
-  .add_ram_output_register ( "OFF" ),
-  .almost_empty_value (ALMOST_EMPTY_VALUE),
-  .almost_full_value (ALMOST_FULL_VALUE),
-  .intended_device_family ("Cyclone V"),
-  .lpm_hint ("RAM_BLOCK_TYPE=M10K"),
-  .lpm_numwords (2**AWIDTH),
-  .lpm_showahead ("ON"),
-  .lpm_type ("scfifo"),
-  .lpm_width (DWIDTH),
-  .lpm_widthu (AWIDTH),
-  .overflow_checking ("ON"),
-  .underflow_checking ("ON"),
-  .use_eab ("ON")
-
-  ) scfifo_inst (
-  .clock ( clk_i ),
-  .data ( data_i ),
-  .rdreq ( rdreq_i ),
-  .sclr ( srt_i ),
-  .wrreq ( wrreq_i ),
+scfifo #(
+  .add_ram_output_register ( "OFF"               ),
+  .almost_empty_value      ( ALMOST_EMPTY_VALUE  ),
+  .almost_full_value       ( ALMOST_FULL_VALUE   ),
+  .intended_device_family  ( "Cyclone V"         ),
+  .lpm_hint                ("RAM_BLOCK_TYPE=M10K"),
+  .lpm_numwords            ( 2**AWIDTH           ),
+  .lpm_showahead           ( "ON"                ),
+  .lpm_type                ( "scfifo"            ),
+  .lpm_width               ( DWIDTH              ),
+  .lpm_widthu              ( AWIDTH              ),
+  .overflow_checking       ( "ON"                ),
+  .underflow_checking      ( "ON"                ),
+  .use_eab                 ( "ON"                )
+) scfifo_inst (
+  .clock        ( clk_i          ),
+  .data         ( data_i         ),
+  .rdreq        ( rdreq_i        ),
+  .sclr         ( srst_i         ),
+  .wrreq        ( wrreq_i        ),
   .almost_empty ( almost_empty_o ),
-  .almost_full ( almost_full_o ),
-  .empty ( empty_o ),
-  .full ( full_o),
-  .q ( q_o ),
-  .usedw ( usedw_o ),
-  .aclr (),
-  .eccstatus ()
+  .almost_full  ( almost_full_o  ),
+  .empty        ( empty_o        ),
+  .full         ( full_o         ),
+  .q            ( q_o            ),
+  .usedw        ( usedw_o        ),
+  .aclr         (                ),
+  .eccstatus    (                )
 );
 
 endmodule
