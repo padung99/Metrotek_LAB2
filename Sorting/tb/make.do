@@ -1,13 +1,9 @@
-set path_to_library C:/intelFPGA_lite/18.1/quartus/eda/sim_lib
 vlib work
 
 set source_file {
-  "../rtl/fifo.sv"
-  "fifo_tb.sv"
-  "scfifo_tb.sv"
-  "top_tb.sv"
+  "../rtl/Sorting.sv"
+  "Sorting_tb.sv"
 }
-vlog $path_to_library/altera_mf.v
 
 foreach files $source_file {
   vlog -sv $files
@@ -19,7 +15,7 @@ set fbasename [file rootname [file tail [lindex $source_file end]]]
 vsim $fbasename
 
 add log -r /*
-add wave -group dut /top_tb/dut/fifo_dut/*
-add wave -group dut2 /top_tb/dut2/golden_model/*
+add wave "sim:/Sorting_tb/dut/sort_mem"
+add wave -r *
 view -undock wave
 run -all

@@ -15,40 +15,100 @@ module fifo #(
   output logic [DWIDTH-1:0] q_o,
   output logic              empty_o,
   output logic              full_o,
-  output logic [AWIDTH-1:0] usedw_o,
+  output logic [AWIDTH:0] usedw_o,
 
   output logic              almost_full_o,  
   output logic              almost_empty_o
 );
 
-scfifo #(
-  .add_ram_output_register ( REGISTER_OUTPUT     ),
-  .almost_empty_value      ( ALMOST_EMPTY_VALUE  ),
-  .almost_full_value       ( ALMOST_FULL_VALUE   ),
-  .intended_device_family  ( "Cyclone V"         ),
-  .lpm_hint                ("RAM_BLOCK_TYPE=M10K"),
-  .lpm_numwords            ( 2**AWIDTH           ),
-  .lpm_showahead           ( SHOWAHEAD           ),
-  .lpm_type                ( "scfifo"            ),
-  .lpm_width               ( DWIDTH              ),
-  .lpm_widthu              ( AWIDTH              ),
-  .overflow_checking       ( "ON"                ),
-  .underflow_checking      ( "ON"                ),
-  .use_eab                 ( "ON"                )
-) golden_model (
-  .clock        ( clk_i          ),
-  .data         ( data_i         ),
-  .rdreq        ( rdreq_i        ),
-  .sclr         ( srst_i         ),
-  .wrreq        ( wrreq_i        ),
-  .almost_empty ( almost_empty_o ),
-  .almost_full  ( almost_full_o  ),
-  .empty        ( empty_o        ),
-  .full         ( full_o         ),
-  .q            ( q_o            ),
-  .usedw        ( usedw_o        ),
-  .aclr         (                ),
-  .eccstatus    (                )
-);
+logic [AWIDTH:0]   wr_addr;
+logic [AWIDTH:0]   rd_addr;
+
+logic [DWIDTH-1:0] mem [2**AWIDTH-1:0];
+
+int                first_write;
+logic              valid_rd;
+logic              valid_wr;
+always_ff @( posedge clk_i )
+  begin
+    if( srst_i )
+      wr_addr <= ( AWIDTH+1 )'(0);
+    else
+      if( valid_wr ) //
+        wr_addr <= wr_addr + ( AWIDTH+1 )'(1);
+  end
+
+always_ff @( posedge clk_i )
+  begin
+    if( srst_i )
+      rd_addr <= (AWIDTH+1)'(0);
+    else
+      if( valid_rd )
+        rd_addr <= rd_addr + ( AWIDTH+1 )'(1);
+  end
+
+assign valid_rd = rdreq_i  && !empty_o;
+assign valid_wr = wrreq_i  && !full_o;
+
+always_ff @( posedge clk_i )
+  begin
+    if( srst_i || first_write == 0)
+      usedw_o <= (AWIDTH+1)'(0);
+    else
+      if( valid_wr && !valid_rd )
+        usedw_o <= usedw_o + 1;
+      else if( valid_rd && !valid_wr )
+        usedw_o <= usedw_o - 1;
+  end
+
+always_comb
+  begin
+    if( wrreq_i == 1'b1 )
+      first_write = first_write + 1; 
+  end
+
+always_ff @( posedge clk_i )
+  begin
+    if( SHOWAHEAD == "ON" )
+      begin
+        if( usedw_o == 1 && !full_o )
+          begin
+              if (valid_wr)
+                  q_o <= data_i;
+              else
+                  q_o <= 0;
+          end 
+        else
+          q_o <= mem[0];
+      end
+    else
+      q_o <= mem[rd_addr[AWIDTH-1:0]];
+      
+  end
+
+always_ff @( posedge clk_i )
+  begin
+    if( SHOWAHEAD == "ON" )
+      if ((!empty_o) && (!valid_rd))
+        begin
+            q_o <= mem_data[rd_addr[AWIDTH-1:0]];
+        end
+  end
+
+always_ff @( posedge clk_i )
+  begin
+    if( rdreq_i )
+      q_o <= mem[rd_addr[AWIDTH-1:0]];
+  end
+
+always_ff @( posedge clk_i )
+  begin
+    if( wrreq_i )
+      mem[wr_addr[AWIDTH-1:0]] <= data_i;
+  end
+
+assign empty_o = ( wr_addr == rd_addr );
+assign full_o  = ( wr_addr[AWIDTH-1:0] == rd_addr[AWIDTH-1:0] ) &&
+                 ( wr_addr[AWIDTH] != rd_addr[AWIDTH] );
 
 endmodule
