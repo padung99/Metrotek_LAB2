@@ -15,7 +15,7 @@ module fifo #(
   output logic [DWIDTH-1:0] q_o,
   output logic              empty_o,
   output logic              full_o,
-  output logic [AWIDTH:0] usedw_o,
+  output logic [AWIDTH:0]   usedw_o,
 
   output logic              almost_full_o,  
   output logic              almost_empty_o
@@ -69,43 +69,64 @@ always_comb
 
 always_ff @( posedge clk_i )
   begin
-    if( SHOWAHEAD == "ON" )
+    if( valid_rd )
       begin
-        if( usedw_o == 1 && !full_o )
+        if( empty_o )
           begin
-              if (valid_wr)
-                  q_o <= data_i;
-              else
-                  q_o <= 0;
-          end 
+            q_o <= {DWIDTH{1'b0}};
+          end
+        else if( rd_addr[AWIDTH-1:0] >=  (1<<AWIDTH )-1 ) 
+          begin
+            if (SHOWAHEAD == "ON")
+                begin
+                  if ( ( usedw_o == 1 ) && !( full_o ) )
+                    begin
+                      if ( valid_wr )
+                        q_o <= data_i;
+                      else
+                        q_o <= {DWIDTH{1'b0}};
+                    end 
+                  else
+                    q_o <= mem[0];
+
+                end
+              
+            else
+              q_o <= mem[rd_addr[AWIDTH-1:0]];
+          end
         else
-          q_o <= mem[0];
+          begin   
+            if( SHOWAHEAD == "ON" )
+              begin
+                if( usedw_o == 1 && !full_o )
+                  q_o <= {DWIDTH{1'bX}};
+                else
+                  q_o <= mem[rd_addr[AWIDTH-1:0]+1];
+              end
+            else
+              q_o <= mem[rd_addr[AWIDTH-1:0]];
+          end
       end
-    else
-      q_o <= mem[rd_addr[AWIDTH-1:0]];
       
   end
 
 always_ff @( posedge clk_i )
   begin
-    if( SHOWAHEAD == "ON" )
-      if ((!empty_o) && (!valid_rd))
-        begin
-            q_o <= mem_data[rd_addr[AWIDTH-1:0]];
-        end
+    if( valid_wr )
+      begin
+        mem[wr_addr[AWIDTH-1:0]] <= data_i;
+        if( SHOWAHEAD == "ON" )
+          if ((!empty_o) && (!valid_rd))
+            q_o <= mem[rd_addr[AWIDTH-1:0]];
+      end
   end
 
-always_ff @( posedge clk_i )
-  begin
-    if( rdreq_i )
-      q_o <= mem[rd_addr[AWIDTH-1:0]];
-  end
-
-always_ff @( posedge clk_i )
-  begin
-    if( wrreq_i )
-      mem[wr_addr[AWIDTH-1:0]] <= data_i;
-  end
+// always_ff @( negedge clk_i )
+//   begin
+//     if( !empty_o )
+//       if (SHOWAHEAD == "ON")
+//         q_o <= mem[rd_addr[AWIDTH-1:0]];
+//   end
 
 assign empty_o = ( wr_addr == rd_addr );
 assign full_o  = ( wr_addr[AWIDTH-1:0] == rd_addr[AWIDTH-1:0] ) &&

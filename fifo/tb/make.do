@@ -19,7 +19,7 @@ set fbasename [file rootname [file tail [lindex $source_file end]]]
 vsim $fbasename
 
 add log -r /*
-add wave -group dut /top_tb/dut/fifo_dut/*
+add wave -group dut1 /top_tb/dut1/fifo_dut/*
 add wave -group dut2 /top_tb/dut2/golden_model/*
 view -undock wave
 run -all

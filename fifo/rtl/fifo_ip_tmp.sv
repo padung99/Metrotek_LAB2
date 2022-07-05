@@ -228,22 +228,7 @@ module scfifo ( data,
                     end
                     else
                         write_id <= 0;
-                end
-                // else
-                // begin
-                //     write_id <= 0;
-                // end
-
-                // if ((use_eab == "ON") && (stratix_family) && ((showahead_speed) || (showahead_area) || (legacy_speed)))
-                // begin
-                //     write_latency1 <= 1'bx; //
-                //     write_latency2 <= 1'bx;
-                //     data_shown <= {lpm_width{1'b0}};                    
-                //     if (add_ram_output_register == "ON")
-                //         tmp_q <= {lpm_width{1'b0}};
-                //     else
-                //         tmp_q <= {lpm_width{1'bX}};
-                // end            
+                end          
             end
             else 
             begin
@@ -265,31 +250,6 @@ module scfifo ( data,
                                 count_id <= count_id - 1;
                         end                
 
-                        // if ((use_eab == "ON") && stratix_family && (showahead_speed || showahead_area || legacy_speed))
-                        // begin
-                        //     if ((wrt_count == 1 && valid_rreq && !valid_wreq) || ((wrt_count == 1 ) && valid_wreq && valid_rreq))
-                        //     begin
-                        //         empty_flag <= 1'b1;
-                        //     end
-                        //     else
-                        //     begin
-                        //         if (showahead_speed)
-                        //         begin
-                        //             if (data_shown[write_latency2] == 1'b0)
-                        //             begin
-                        //                 empty_flag <= 1'b1;
-                        //             end
-                        //         end
-                        //         else if (showahead_area || legacy_speed)
-                        //         begin
-                        //             if (data_shown[write_latency1] == 1'b0)
-                        //             begin
-                        //                 empty_flag <= 1'b1;
-                        //             end
-                        //         end
-                        //     end
-                        // end
-                        // else
                         begin
                             if (!valid_wreq)
                             begin
@@ -305,55 +265,11 @@ module scfifo ( data,
                                 if ((use_eab == "OFF") || (!stratix_family))
                                     tmp_q <= {lpm_width{1'b0}};
                             end
-                            // else
-                            // begin
-                            //     set_q_to_x_by_empty <= 1'b1;
-                            //     $display ("Warning : Underflow occurred! Fifo output is unknown until the next reset is asserted.");
-                            //     $display ("Time: %0t  Instance: %m", $time);
-                            // end
                         end
                         else if (read_id >= ((1<<lpm_widthu) - 1))
                         begin
                             if (lpm_showahead == "ON") //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                             begin
-                                // if ((use_eab == "ON") && stratix_family && (showahead_speed || showahead_area))                        
-                                // begin
-                                //     if (showahead_speed)
-                                //     begin
-                                //         if ((write_latency2 == 0) || (data_ready[0] == 1'b1))
-                                //         begin
-                                //             if (data_shown[0] == 1'b1)
-                                //             begin
-                                //                 tmp_q <= mem_data[0];
-                                //                 data_shown[0] <= 1'b0;
-                                //                 data_ready[0] <= 1'b0;
-                                //             end
-                                //         end
-                                //     end
-                                //     else
-                                //     begin
-                                //         if ((count_id == 1) && !(full_flag))
-                                //         begin
-                                //             if (underflow_checking == "ON")
-                                //             begin
-                                //                 if ((use_eab == "OFF") || (!stratix_family))
-                                //                     tmp_q <= {lpm_width{1'b0}};
-                                //             end
-                                //             else
-                                //                 tmp_q <= {lpm_width{1'bX}};
-                                //         end
-                                //         else if ((write_latency1 == 0) || (data_ready[0] == 1'b1))
-                                //         begin
-                                //             if (data_shown[0] == 1'b1)
-                                //             begin
-                                //                 tmp_q <= mem_data[0];
-                                //                 data_shown[0] <= 1'b0;
-                                //                 data_ready[0] <= 1'b0;
-                                //             end
-                                //         end                            
-                                //     end
-                                // end
-                                // else
                                 begin
                                     if ((count_id == 1) && !(full_flag))
                                     begin
@@ -374,23 +290,6 @@ module scfifo ( data,
                             end 
                             else ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                             begin
-                                // if ((use_eab == "ON") && stratix_family && legacy_speed)
-                                // begin
-                                //     if ((write_latency1 == read_id) || (data_ready[read_id] == 1'b1))
-                                //     begin
-                                //         if (data_shown[read_id] == 1'b1)
-                                //         begin
-                                //             tmp_q <= mem_data[read_id];
-                                //             data_shown[read_id] <= 1'b0;
-                                //             data_ready[read_id] <= 1'b0;
-                                //         end
-                                //     end
-                                //     else
-                                //     begin
-                                //         tmp_q <= {lpm_width{1'bX}};
-                                //     end                                  
-                                // end
-                                // else
                                     tmp_q <= mem_data[read_id];
                             end
  
@@ -400,113 +299,33 @@ module scfifo ( data,
                         begin
                             if (lpm_showahead == "ON")
                             begin //----------------------------------------------------------------------------------------------------------------------------------------------
-                                // if ((use_eab == "ON") && stratix_family && (showahead_speed || showahead_area))
-                                // begin
-                                //     // if (showahead_speed)
-                                //     // begin
-                                //     //     if ((write_latency2 == read_id+1) || (data_ready[read_id+1] == 1'b1))
-                                //     //     begin
-                                //     //         if (data_shown[read_id+1] == 1'b1)
-                                //     //         begin
-                                //     //             tmp_q <= mem_data[read_id + 1];
-                                //     //             data_shown[read_id+1] <= 1'b0;
-                                //     //             data_ready[read_id+1] <= 1'b0;
-                                //     //         end
-                                //     //     end
-                                //     // end
-                                //     // else
-                                //     begin
-                                //         if ((count_id == 1) && !(full_flag))
-                                //         begin
-                                //             if (underflow_checking == "ON")
-                                //             begin
-                                //                 // if ((use_eab == "OFF") || (!stratix_family))
-                                //                 //     tmp_q <= {lpm_width{1'b0}};
-                                //             end
-                                //             else
-                                //                 // tmp_q <= {lpm_width{1'bX}};
-                                //         end
-                                //         else if ((write_latency1 == read_id+1) || (data_ready[read_id+1] == 1'b1))
-                                //         begin
-                                //             if (data_shown[read_id+1] == 1'b1)
-                                //             begin
-                                //                 tmp_q <= mem_data[read_id + 1];
-                                //                 data_shown[read_id+1] <= 1'b0;
-                                //                 data_ready[read_id+1] <= 1'b0;
-                                //             end
-                                //         end
-                                //     end
-                                // end
-                                // else
                                 begin
                                     if ((count_id == 1) && !(full_flag))
                                     begin
-                                        // if ((use_eab == "OFF") && stratix_family)
-                                        // begin
-                                        //     if (valid_wreq)
-                                        //     begin
-                                        //         tmp_q <= data;
-                                        //     end
-                                        //     else
-                                        //     begin
-                                        //         if (underflow_checking == "ON")
-                                        //         begin
-                                        //             if ((use_eab == "OFF") || (!stratix_family))
-                                        //                 tmp_q <= {lpm_width{1'b0}};
-                                        //         end
-                                        //         else
-                                        //             tmp_q <= {lpm_width{1'bX}};
-                                        //     end
-                                        // end
-                                        // else
                                         begin
                                             tmp_q <= {lpm_width{1'bX}};
                                         end
                                     end
                                     else
-                                        tmp_q <= mem_data[read_id + 1];
+                                        tmp_q <= mem_data[read_id + 1]; //showahead ON
                                 end
                             end //-------------------------------------------------------------------------------------------------------------------------------------------
                             else
                             begin
-                                // if ((use_eab == "ON") && stratix_family && legacy_speed)
-                                // begin
-                                //     if ((write_latency1 == read_id) || (data_ready[read_id] == 1'b1))
-                                //     begin
-                                //         if (data_shown[read_id] == 1'b1)
-                                //         begin
-                                //             tmp_q <= mem_data[read_id];
-                                //             data_shown[read_id] <= 1'b0;
-                                //             data_ready[read_id] <= 1'b0;
-                                //         end
-                                //     end
-                                //     else
-                                //     begin
-                                //         tmp_q <= {lpm_width{1'bX}};
-                                //     end                                
-                                // end
                                 else
-                                    tmp_q <= mem_data[read_id];
+                                    tmp_q <= mem_data[read_id]; //showahead OFF
                             end
 
                             read_id <= read_id + 1;            
                         end
                     end
                 end
-
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
                 // WRITE operation
                 if (valid_wreq)
                 begin
                     if (!(set_q_to_x || set_q_to_x_by_empty))
                     begin
-                        // if (full_flag && (overflow_checking == "OFF"))
-                        // begin
-                        //     set_q_to_x <= 1'b1;
-                        //     $display ("Warning : Overflow occurred! Fifo output is unknown until the next reset is asserted.");
-                        //     $display ("Time: %0t  Instance: %m", $time);
-                        // end
-                        // else
-                        begin
                             mem_data[write_id] <= data;
                             write_flag <= 1'b1;
     
@@ -514,10 +333,6 @@ module scfifo ( data,
                             begin
                                 empty_flag <= 1'b0;
                             end
-                            // else
-                            // begin
-                            //     empty_latency1 <= 1'b0;
-                            // end
     
                             if (!valid_rreq)                
                                 wrt_count <= wrt_count + 1;
@@ -550,19 +365,7 @@ module scfifo ( data,
     
                             if (lpm_showahead == "ON")
                             begin
-                                // if ((use_eab == "ON") && stratix_family && (showahead_speed || showahead_area))
-                                // begin
-                                //     write_latency1 <= write_id;                    
-                                //     data_shown[write_id] <= 1'b1;
-                                //     data_ready[write_id] <= 1'bx;
-                                // end
-                                // else
                                 begin 
-                                    // if ((use_eab == "OFF") && stratix_family && (count_id == 0) && (!full_flag))
-                                    // begin
-                                    //     tmp_q <= data;
-                                    // end
-                                    // else
                                     begin
                                         if ((!empty_flag) && (!valid_rreq))
                                         begin
@@ -571,16 +374,10 @@ module scfifo ( data,
                                     end
                                 end
                             end
-                            else
-                            begin
-                                // if ((use_eab == "ON") && stratix_family && legacy_speed) 
-                                // begin
-                                //     write_latency1 <= write_id;                    
-                                //     data_shown[write_id] <= 1'b1;
-                                //     data_ready[write_id] <= 1'bx;
-                                // end
-                            end
-                        end
+                            // else
+                            // begin
+
+                            // end
                     end   
                 end    
 
@@ -623,88 +420,6 @@ module scfifo ( data,
                 end
             end
 
-            // if ((use_eab == "ON") && stratix_family)
-            // begin
-            //     if (showahead_speed)
-            //     begin
-            //         write_latency2 <= write_latency1;
-            //         write_latency3 <= write_latency2;
-            //         if (write_latency3 !== write_latency2)
-            //             data_ready[write_latency2] <= 1'b1;
-                                    
-            //         empty_latency2 <= empty_latency1;
-
-            //         if (data_shown[write_latency2]==1'b1)
-            //         begin
-            //             if ((read_id == write_latency2) || aclr || sclr)
-            //             begin
-            //                 if (!(aclr === 1'b1) && !(sclr === 1'b1))                        
-            //                 begin
-            //                     if (write_latency2 !== 1'bx)
-            //                     begin
-            //                         tmp_q <= mem_data[write_latency2];
-            //                         data_shown[write_latency2] <= 1'b0;
-            //                         data_ready[write_latency2] <= 1'b0;
-    
-            //                         if (!valid_rreq)
-            //                             empty_flag <= empty_latency2;
-            //                     end
-            //                 end
-            //             end
-            //         end
-            //     end
-            //     else if (showahead_area)
-            //     begin
-            //         write_latency2 <= write_latency1;
-            //         if (write_latency2 !== write_latency1)
-            //             data_ready[write_latency1] <= 1'b1;
-
-            //         if (data_shown[write_latency1]==1'b1)
-            //         begin
-            //             if ((read_id == write_latency1) || aclr || sclr)
-            //             begin
-            //                 if (!(aclr === 1'b1) && !(sclr === 1'b1))
-            //                 begin
-            //                     if (write_latency1 !== 1'bx)
-            //                     begin
-            //                         tmp_q <= mem_data[write_latency1];
-            //                         data_shown[write_latency1] <= 1'b0;
-            //                         data_ready[write_latency1] <= 1'b0;
-
-            //                         if (!valid_rreq)
-            //                         begin
-            //                             empty_flag <= empty_latency1;
-            //                         end
-            //                     end
-            //                 end
-            //             end
-            //         end                            
-            //     end
-            //     else
-            //     begin
-            //         if (legacy_speed)
-            //         begin
-            //             write_latency2 <= write_latency1;
-            //             if (write_latency2 !== write_latency1)
-            //                 data_ready[write_latency1] <= 1'b1;
-
-            //                 empty_flag <= empty_latency1;
-
-            //             if ((wrt_count == 1 && !valid_wreq && valid_rreq) || aclr || sclr)
-            //             begin
-            //                 empty_flag <= 1'b1;
-            //                 empty_latency1 <= 1'b1;
-            //             end
-            //             else
-            //             begin
-            //                 if ((wrt_count == 1) && valid_wreq && valid_rreq)
-            //                 begin
-            //                     empty_flag <= 1'b1;
-            //                 end
-            //             end
-            //         end
-            //     end
-            // end
         end
     end
 
