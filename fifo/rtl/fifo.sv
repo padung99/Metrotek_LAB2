@@ -29,6 +29,7 @@ logic [DWIDTH-1:0] mem [2**AWIDTH-1:0];
 int                first_write;
 logic              valid_rd;
 logic              valid_wr;
+
 always_ff @( posedge clk_i )
   begin
     if( srst_i )
@@ -64,7 +65,16 @@ always_ff @( posedge clk_i )
 always_comb
   begin
     if( wrreq_i == 1'b1 )
-      first_write = first_write + 1; 
+      first_write = first_write + 1;
+  end
+
+always_ff @( posedge clk_i )
+  begin
+    if( srst_i )
+      if (REGISTER_OUTPUT == "ON")
+          q_o <= (DWIDTH)'(0);
+      else
+          q_o <= {DWIDTH{1'bX}};
   end
 
 always_ff @( posedge clk_i )
@@ -73,9 +83,9 @@ always_ff @( posedge clk_i )
       begin
         if( empty_o )
           begin
-            q_o <= {DWIDTH{1'b0}};
+            q_o <= (DWIDTH)'(0);
           end
-        else if( rd_addr[AWIDTH-1:0] >=  (1<<AWIDTH )-1 ) 
+        else if( rd_addr[AWIDTH-1:0] >=  (1<<AWIDTH )-1 )
           begin
             if (SHOWAHEAD == "ON")
                 begin
@@ -84,13 +94,11 @@ always_ff @( posedge clk_i )
                       if ( valid_wr )
                         q_o <= data_i;
                       else
-                        q_o <= {DWIDTH{1'b0}};
+                        q_o <= (DWIDTH)'(0);
                     end 
                   else
                     q_o <= mem[0];
-
                 end
-              
             else
               q_o <= mem[rd_addr[AWIDTH-1:0]];
           end
@@ -121,15 +129,10 @@ always_ff @( posedge clk_i )
       end
   end
 
-// always_ff @( negedge clk_i )
-//   begin
-//     if( !empty_o )
-//       if (SHOWAHEAD == "ON")
-//         q_o <= mem[rd_addr[AWIDTH-1:0]];
-//   end
-
-assign empty_o = ( wr_addr == rd_addr );
-assign full_o  = ( wr_addr[AWIDTH-1:0] == rd_addr[AWIDTH-1:0] ) &&
-                 ( wr_addr[AWIDTH] != rd_addr[AWIDTH] );
+assign almost_empty_o = ( usedw_o < ALMOST_EMPTY_VALUE );
+assign almost_full_o  = ( usedw_o >= ALMOST_FULL_VALUE );
+assign empty_o        = ( wr_addr == rd_addr );
+assign full_o         = ( wr_addr[AWIDTH-1:0] == rd_addr[AWIDTH-1:0] ) &&
+                        ( wr_addr[AWIDTH] != rd_addr[AWIDTH] );
 
 endmodule

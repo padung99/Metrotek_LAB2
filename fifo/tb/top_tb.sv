@@ -1,7 +1,8 @@
 module top_tb;
 
-parameter SHOWAHEAD_TOP = "ON";
+parameter SHOWAHEAD_TOP       = "ON";
+parameter REGISTER_OUTPUT_TOP = "ON";
 
-fifo_tb #(.SHOWAHEAD_TB(SHOWAHEAD_TOP)) dut1();
-scfifo_tb #(.SHOWAHEAD_TB(SHOWAHEAD_TOP)) dut2();
+fifo_tb #(.SHOWAHEAD_TB(SHOWAHEAD_TOP), .REGISTER_OUTPUT_TB(REGISTER_OUTPUT_TOP) ) dut1();
+scfifo_tb #( .SHOWAHEAD_TB(SHOWAHEAD_TOP), .REGISTER_OUTPUT_TB(REGISTER_OUTPUT_TOP) ) dut2();
 endmodule
