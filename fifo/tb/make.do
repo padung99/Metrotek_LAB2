@@ -3,8 +3,6 @@ vlib work
 
 set source_file {
   "../rtl/fifo.sv"
-  "fifo_tb.sv"
-  "scfifo_tb.sv"
   "top_tb.sv"
 }
 vlog $path_to_library/altera_mf.v

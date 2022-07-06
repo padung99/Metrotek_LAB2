@@ -68,7 +68,7 @@ scfifo #(
   .add_ram_output_register ( REGISTER_OUTPUT_TOP     ),
   .almost_empty_value      ( ALMOST_EMPTY_VALUE_TOP  ),
   .almost_full_value       ( ALMOST_FULL_VALUE_TOP   ),
-  .intended_device_family  ( ""                      ), //////////
+  .intended_device_family  ( "cycloneV"              ),
   .lpm_hint                ("RAM_BLOCK_TYPE=M10K"    ),
   .lpm_numwords            ( 2**AWIDTH_TOP           ),
   .lpm_showahead           ( SHOWAHEAD_TOP           ),

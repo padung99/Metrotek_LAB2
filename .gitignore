@@ -1,3 +1,4 @@
+fifo/tb/scfifo_tb.sv
 work
 db
 greybox_tmp
@@ -9,3 +10,7 @@ scfifo_tmp
 *.rpt
 *.wlf
 *.bak
+
+
+
+
