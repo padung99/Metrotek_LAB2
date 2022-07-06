@@ -94,23 +94,6 @@ scfifo #(
   .eccstatus    (                   )
 );
 
-// scfifo_tb #(
-//   .DWIDTH_TB             ( DWIDTH_TOP             ),
-//   .AWIDTH_TB             ( AWIDTH_TOP             ),
-//   .SHOWAHEAD_TB          ( SHOWAHEAD_TOP          ),
-//   .ALMOST_FULL_VALUE_TB  ( ALMOST_FULL_VALUE_TOP  ),
-//   .ALMOST_EMPTY_VALUE_TB ( ALMOST_EMPTY_VALUE_TOP ),
-//   .REGISTER_OUTPUT_TB    ( REGISTER_OUTPUT_TOP    )
-// ) dut2(
-// .q_o_tb            ( q_o_top2            ),
-// .empty_o_tb        ( empty_o_top2        ),
-// .full_o_tb         ( full_o_top2         ),
-// .usedw_o_tb        ( usedw_o_top2        ),
-
-// .almost_full_o_tb  ( almost_full_o_top2  ),
-// .almost_empty_o_tb ( almost_empty_o_top2 )
-// );
-
 mailbox #( logic [DWIDTH_TOP-1:0] ) data_gen   = new();
 mailbox #( logic [DWIDTH_TOP-1:0] ) data_write = new();
 mailbox #( logic [DWIDTH_TOP-1:0] ) data_read  = new();
@@ -223,6 +206,48 @@ else
   $display("Reading mailbox is empty!!!");
 endtask
 
+task compare_ouput();
+forever
+  begin
+    if( q_o_top != q_o_top2 )
+      begin
+        q_o_error = 1;
+        $display("q_o error!!");
+      end
+
+    if( empty_o_top != empty_o_top2 )
+      begin
+        empty_o_error = 1;
+        $display("empty_o error!!");
+      end
+
+    if( full_o_top != full_o_top2 )
+      begin
+        full_o_error = 1;
+        $display("full_o error!!");
+      end
+
+    if( usedw_o_top != usedw_o_top2 )
+      begin
+        usedw_o_error = 1;
+        $display("usedw_o error!!");
+      end
+
+    if( almost_full_o_top != almost_full_o_top2 )
+      begin
+        almost_full_o_error = 1;
+        $display("almost_full_o error!!");
+      end
+
+    if( almost_empty_o_top != almost_empty_o_top2 )
+      begin
+        almost_empty_o_error = 1;
+        $display("almost_empty_o error!!");
+      end
+    ##1;
+  end
+endtask
+
 initial
   begin
     srst_i_tb <= 1'b1;
@@ -234,10 +259,16 @@ initial
     fork
       wr_fifo( data_gen, data_write );
       rd_fifo( data_read );
+    //   compare_ouput();
     join
-    // testing( data_read, data_write );
+    testing( data_read, data_write );
 
-    // $display( "Test done!" );
+    // compare_ouput();
+    // if( !q_o_error && !empty_o_error && !full_o_error && !usedw_o_error && !almost_full_o_error && !almost_empty_o_error )
+    //   $display(" The result is the same, no error!");
+
+    $display( "Test done!" );
+
     $stop();
   end
 endmodule
