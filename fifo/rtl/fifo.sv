@@ -61,9 +61,9 @@ always_ff @( posedge clk_i )
       usedw_o <= (AWIDTH+1)'(0);
     else
       if( valid_wr && !valid_rd )
-        usedw_o <= usedw_o + 1;
+        usedw_o <= usedw_o + (AWIDTH+1)'(1);
       else if( valid_rd && !valid_wr )
-        usedw_o <= usedw_o - 1;
+        usedw_o <= usedw_o - (AWIDTH+1)'(1);
   end
 
 always_ff @( posedge clk_i )
