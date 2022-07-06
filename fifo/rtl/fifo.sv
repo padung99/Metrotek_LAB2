@@ -1,5 +1,5 @@
 module fifo #(
-  parameter DWIDTH             = 16,
+  parameter DWIDTH             = 10,
   parameter AWIDTH             = 8,
   parameter SHOWAHEAD          = "ON",
   parameter ALMOST_FULL_VALUE  = 240,
@@ -25,8 +25,10 @@ logic [AWIDTH:0]   wr_addr;
 logic [AWIDTH:0]   rd_addr;
 logic [AWIDTH:0]   next_rdaddr;
 logic [AWIDTH:0]   next_wraddr;
+logic [AWIDTH:0]   first_valid_word;
+logic [AWIDTH:0]   first_addr;
 
-logic [DWIDTH-1:0] mem [2**AWIDTH-1:0];
+(* ramstyle = "M10K" *) logic [DWIDTH-1:0] mem [2**AWIDTH-1:0];
 
 int                first_write;
 logic              valid_rd;
@@ -50,11 +52,12 @@ always_ff @( posedge clk_i )
         rd_addr <= next_rdaddr;
   end
 
-assign valid_rd = rdreq_i  && !empty_o;
-assign valid_wr = wrreq_i  && !full_o;
-assign next_rdaddr = rd_addr + ( AWIDTH+1 )'(1);
-assign next_wraddr = wr_addr + ( AWIDTH+1 )'(1);
-
+assign valid_rd         = rdreq_i  && !empty_o;
+assign valid_wr         = wrreq_i  && !full_o;
+assign next_rdaddr      = rd_addr + ( AWIDTH+1 )'(1);
+assign next_wraddr      = wr_addr + ( AWIDTH+1 )'(1);
+assign first_valid_word = ( ( usedw_o == 1 ) && ( valid_wr ) && ( !empty_o ) ) ? (AWIDTH)'(1): (AWIDTH)'(0);
+assign first_addr       = next_rdaddr - first_valid_word;
 always_ff @( posedge clk_i )
   begin
     if( srst_i )
@@ -77,59 +80,51 @@ always_ff @( posedge clk_i )
 
 always_ff @( posedge clk_i )
   begin
-    if( valid_rd )
+    if( SHOWAHEAD == "ON")
       begin
-        if( SHOWAHEAD == "ON" )
-          q_o <= mem[next_rdaddr[AWIDTH-1:0]];
-        else
-          q_o <= mem[rd_addr[AWIDTH-1:0]];
-        // if( rd_addr[AWIDTH-1:0] >=  (1<<AWIDTH )-1 ) //rd_addr[AWIDTH-1:0] = 1111
-        //   begin
-        //     if (SHOWAHEAD == "ON")
-        //       begin
-        //         if ( ( usedw_o == 1 ) && !full_o )
-        //           begin
-        //             if ( valid_wr )
-        //               q_o <= data_i; //Ouput the first word of valid data
-        //             else
-        //               q_o <= (DWIDTH)'(0);
-        //           end
-        //         else
-        //           // q_o <= mem[rd_addr[AWIDTH-1:0]]; /////////////q_o <= mem[0]
-        //           q_o <= mem[0];
-        //       end
-        //     else
-        //       q_o <= mem[next_rdaddr[AWIDTH-1:0]];
-        //   end
-        // else
-        //   begin
-        //     if( SHOWAHEAD == "ON" )
-        //       begin
-        //         if( ( usedw_o == 1 ) && !full_o )
-        //           q_o <= {DWIDTH{1'bX}};
-        //         else
-        //           q_o <= mem[next_rdaddr[AWIDTH-1:0]]; //////////
-        //       end
-        //     else
-        //       q_o <= mem[rd_addr[AWIDTH-1:0]];
-        //   end
+        if( valid_rd || first_valid_word == (AWIDTH)'(1) )
+          q_o <= mem[next_rdaddr[AWIDTH-1:0]-first_valid_word];
+
+        // if( !valid_rd && valid_wr && !empty_o )
+        // if( valid_wr && !empty_o &&  !rdreq_i )
+        //   q_o <= mem[rd_addr[AWIDTH-1:0]]; //Ouput the first word of valid data
       end
+    // else if( SHOWAHEAD == "ON" && usedw_o == 1 )
+    //   if( valid_wr && !empty_o )
+    //     q_o <= mem[rd_addr[AWIDTH-1:0]]; //Ouput the first word of valid data
     else
-      if( SHOWAHEAD == "ON" )
-        if( valid_wr && !empty_o )
-          q_o <= mem[rd_addr[AWIDTH-1:0]]; //Ouput the first word of valid data
-      
+      if( valid_rd )
+        q_o <= mem[rd_addr[AWIDTH-1:0]];
+
   end
+
+// always_ff @( posedge clk_i )
+//   begin
+//     if( valid_rd )
+//       begin
+//         if( SHOWAHEAD == "ON" )
+//           q_o <= mem[next_rdaddr[AWIDTH-1:0]];
+//         // else
+//         //   q_o <= mem[rd_addr[AWIDTH-1:0]];
+//       end
+//     else if( !valid_rd && SHOWAHEAD != "ON")
+//       begin
+//         q_o <= mem[rd_addr[AWIDTH-1:0]];
+//       end
+//     else
+//       if( SHOWAHEAD == "ON" )
+//         if( valid_wr && !empty_o )
+//           q_o <= mem[rd_addr[AWIDTH-1:0]]; //Ouput the first word of valid data
+      
+//   end
 
 always_ff @( posedge clk_i )
   begin
     if( valid_wr )
-      begin
-        mem[wr_addr[AWIDTH-1:0]] <= data_i;
-        // if( SHOWAHEAD == "ON" )
-        //   if ((!empty_o) && (!valid_rd))
-        //     q_o <= mem[rd_addr[AWIDTH-1:0]]; //Ouput the first word of valid data
-      end
+      mem[wr_addr[AWIDTH-1:0]] <= data_i;
+      // if( SHOWAHEAD == "ON" )
+      //   if( valid_rd && !empty_o )
+      //     q_o <= mem[rd_addr[AWIDTH-1:0]]; //Ouput the first word of valid data
   end
 
 assign almost_empty_o = ( usedw_o < ALMOST_EMPTY_VALUE );

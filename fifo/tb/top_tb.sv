@@ -38,7 +38,7 @@ initial
     #5 clk_i_top = !clk_i_top;
 
 default clocking cb
-  @ (posedge clk_i_top);
+  @ (posedge clk_i_top); 
 endclocking
 
 fifo #(
@@ -50,48 +50,48 @@ fifo #(
   .REGISTER_OUTPUT    ( REGISTER_OUTPUT_TOP    )
 ) dut1(
   .clk_i          ( clk_i_top          ),
-  .srst_i         ( srst_i_tb         ),
-  .data_i         ( data_i_tb         ),
+  .srst_i         ( srst_i_tb          ),
+  .data_i         ( data_i_tb          ),
 
-  .wrreq_i        ( wrreq_i_tb        ),
-  .rdreq_i        ( rdreq_i_tb        ),
-.q_o            ( q_o_top            ),
-.empty_o        ( empty_o_top        ),
-.full_o         ( full_o_top         ),
-.usedw_o       ( usedw_o_top        ),
+  .wrreq_i        ( wrreq_i_tb         ),
+  .rdreq_i        ( rdreq_i_tb         ),
+  .q_o            ( q_o_top            ),
+  .empty_o        ( empty_o_top        ),
+  .full_o         ( full_o_top         ),
+  .usedw_o        ( usedw_o_top        ),
 
-.almost_full_o  ( almost_full_o_top  ),
-.almost_empty_o ( almost_empty_o_top )
+  .almost_full_o  ( almost_full_o_top  ),
+  .almost_empty_o ( almost_empty_o_top )
 );
 
 scfifo #(
   .add_ram_output_register ( REGISTER_OUTPUT_TOP     ),
   .almost_empty_value      ( ALMOST_EMPTY_VALUE_TOP  ),
   .almost_full_value       ( ALMOST_FULL_VALUE_TOP   ),
-  .intended_device_family  ( ""         ), //////////
-  .lpm_hint                ("RAM_BLOCK_TYPE=M10K"),
+  .intended_device_family  ( ""                      ), //////////
+  .lpm_hint                ("RAM_BLOCK_TYPE=M10K"    ),
   .lpm_numwords            ( 2**AWIDTH_TOP           ),
   .lpm_showahead           ( SHOWAHEAD_TOP           ),
-  .lpm_type                ( "scfifo"            ),
+  .lpm_type                ( "scfifo"                ),
   .lpm_width               ( DWIDTH_TOP              ),
   .lpm_widthu              ( AWIDTH_TOP              ),
-  .overflow_checking       ( "ON"                ),
-  .underflow_checking      ( "ON"                ),
-  .use_eab                 ( "ON"                )
+  .overflow_checking       ( "ON"                    ),
+  .underflow_checking      ( "ON"                    ),
+  .use_eab                 ( "ON"                    )
 ) dut2 (
-  .clock        ( clk_i_top          ),
-  .data         ( data_i_tb         ),
-  .rdreq        ( rdreq_i_tb        ),
-  .sclr         ( srst_i_tb         ),
-  .wrreq        ( wrreq_i_tb        ),
+  .clock        ( clk_i_top           ),
+  .data         ( data_i_tb           ),
+  .rdreq        ( rdreq_i_tb          ),
+  .sclr         ( srst_i_tb           ),
+  .wrreq        ( wrreq_i_tb          ),
   .almost_empty ( almost_empty_o_top2 ),
   .almost_full  ( almost_full_o_top2  ),
   .empty        ( empty_o_top2        ),
   .full         ( full_o_top2         ),
   .q            ( q_o_top2            ),
   .usedw        ( usedw_o_top2        ),
-  .aclr         (                   ),
-  .eccstatus    (                   )
+  .aclr         (                     ),
+  .eccstatus    (                     )
 );
 
 mailbox #( logic [DWIDTH_TOP-1:0] ) data_gen   = new();
@@ -206,48 +206,6 @@ else
   $display("Reading mailbox is empty!!!");
 endtask
 
-task compare_ouput();
-forever
-  begin
-    if( q_o_top != q_o_top2 )
-      begin
-        q_o_error = 1;
-        $display("q_o error!!");
-      end
-
-    if( empty_o_top != empty_o_top2 )
-      begin
-        empty_o_error = 1;
-        $display("empty_o error!!");
-      end
-
-    if( full_o_top != full_o_top2 )
-      begin
-        full_o_error = 1;
-        $display("full_o error!!");
-      end
-
-    if( usedw_o_top != usedw_o_top2 )
-      begin
-        usedw_o_error = 1;
-        $display("usedw_o error!!");
-      end
-
-    if( almost_full_o_top != almost_full_o_top2 )
-      begin
-        almost_full_o_error = 1;
-        $display("almost_full_o error!!");
-      end
-
-    if( almost_empty_o_top != almost_empty_o_top2 )
-      begin
-        almost_empty_o_error = 1;
-        $display("almost_empty_o error!!");
-      end
-    ##1;
-  end
-endtask
-
 initial
   begin
     srst_i_tb <= 1'b1;
@@ -259,13 +217,8 @@ initial
     fork
       wr_fifo( data_gen, data_write );
       rd_fifo( data_read );
-    //   compare_ouput();
     join
     testing( data_read, data_write );
-
-    // compare_ouput();
-    // if( !q_o_error && !empty_o_error && !full_o_error && !usedw_o_error && !almost_full_o_error && !almost_empty_o_error )
-    //   $display(" The result is the same, no error!");
 
     $display( "Test done!" );
 

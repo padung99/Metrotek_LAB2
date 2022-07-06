@@ -38,16 +38,16 @@ scfifo #(
   .add_ram_output_register ( REGISTER_OUTPUT_TB     ),
   .almost_empty_value      ( ALMOST_EMPTY_VALUE_TB  ),
   .almost_full_value       ( ALMOST_FULL_VALUE_TB   ),
-  .intended_device_family  ( ""         ), //////////
-  .lpm_hint                ("RAM_BLOCK_TYPE=M10K"),
+  .intended_device_family  ( ""                     ), //////////
+  .lpm_hint                ("RAM_BLOCK_TYPE=M10K"   ),
   .lpm_numwords            ( 2**AWIDTH_TB           ),
   .lpm_showahead           ( SHOWAHEAD_TB           ),
-  .lpm_type                ( "scfifo"            ),
+  .lpm_type                ( "scfifo"               ),
   .lpm_width               ( DWIDTH_TB              ),
   .lpm_widthu              ( AWIDTH_TB              ),
-  .overflow_checking       ( "ON"                ),
-  .underflow_checking      ( "ON"                ),
-  .use_eab                 ( "ON"                )
+  .overflow_checking       ( "ON"                   ),
+  .underflow_checking      ( "ON"                   ),
+  .use_eab                 ( "ON"                   )
 ) golden_model (
   .clock        ( clk_i_tb          ),
   .data         ( data_i_tb         ),
@@ -63,29 +63,6 @@ scfifo #(
   .aclr         (                   ),
   .eccstatus    (                   )
 );
-
-// fifo #(
-//   .DWIDTH             ( DWIDTH_TB             ),
-//   .AWIDTH             ( AWIDTH_TB             ),
-//   .SHOWAHEAD          ( SHOWAHEAD_TB          ),
-//   .ALMOST_FULL_VALUE  ( ALMOST_FULL_VALUE_TB  ),
-//   .ALMOST_EMPTY_VALUE ( ALMOST_EMPTY_VALUE_TB ),
-//   .REGISTER_OUTPUT    ( REGISTER_OUTPUT_TB    )
-// ) fifo_dut (
-//   .clk_i          ( clk_i_tb          ),
-//   .srst_i         ( srst_i_tb         ),
-//   .data_i         ( data_i_tb         ),
-
-//   .wrreq_i        ( wrreq_i_tb        ),
-//   .rdreq_i        ( rdreq_i_tb        ),
-//   .q_o            ( q_o_tb            ),
-//   .empty_o        ( empty_o_tb        ),
-//   .full_o         ( full_o_tb         ),
-//   .usedw_o        ( usedw_o_tb        ),
-
-//   .almost_full_o  ( almost_full_o_tb  ),
-//   .almost_empty_o ( almost_empty_o_tb )
-// );
 
 mailbox #( logic [DWIDTH_TB-1:0] ) data_gen   = new();
 mailbox #( logic [DWIDTH_TB-1:0] ) data_write = new();

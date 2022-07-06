@@ -34,36 +34,6 @@ default clocking cb
   @ (posedge clk_i_tb);
 endclocking
 
-// scfifo #(
-//   .add_ram_output_register ( REGISTER_OUTPUT_TB     ),
-//   .almost_empty_value      ( ALMOST_EMPTY_VALUE_TB  ),
-//   .almost_full_value       ( ALMOST_FULL_VALUE_TB   ),
-//   .intended_device_family  ( "Cyclone V"         ),
-//   .lpm_hint                ("RAM_BLOCK_TYPE=M10K"),
-//   .lpm_numwords            ( 2**AWIDTH_TB           ),
-//   .lpm_showahead           ( SHOWAHEAD_TB           ),
-//   .lpm_type                ( "scfifo"            ),
-//   .lpm_width               ( DWIDTH_TB              ),
-//   .lpm_widthu              ( AWIDTH_TB              ),
-//   .overflow_checking       ( "ON"                ),
-//   .underflow_checking      ( "ON"                ),
-//   .use_eab                 ( "ON"                )
-// ) golden_model (
-//   .clock        ( clk_i_tb          ),
-//   .data         ( data_i_tb         ),
-//   .rdreq        ( rdreq_i_tb        ),
-//   .sclr         ( srst_i_tb         ),
-//   .wrreq        ( wrreq_i_tb        ),
-//   .almost_empty ( almost_empty_o_tb ),
-//   .almost_full  ( almost_full_o_tb  ),
-//   .empty        ( empty_o_tb        ),
-//   .full         ( full_o_tb         ),
-//   .q            ( q_o_tb            ),
-//   .usedw        ( usedw_o_tb        ),
-//   .aclr         (                   ),
-//   .eccstatus    (                   )
-// );
-
 fifo #(
   .DWIDTH             ( DWIDTH_TB             ),
   .AWIDTH             ( AWIDTH_TB             ),
