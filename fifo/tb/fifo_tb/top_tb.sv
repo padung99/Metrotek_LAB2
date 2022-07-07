@@ -10,16 +10,16 @@ parameter REGISTER_OUTPUT_TOP    = "OFF";
 
 parameter MAX_DATA_SEND         = 100;
 
-logic                 srst_i_tb;
+logic                  srst_i_tb;
 logic [DWIDTH_TOP-1:0] data_i_tb;
 
-logic                 wrreq_i_tb;
-logic                 rdreq_i_tb;
+logic                  wrreq_i_tb;
+logic                  rdreq_i_tb;
 
 logic [DWIDTH_TOP-1:0] q_o_top, q_o_top2;
 logic                  empty_o_top, empty_o_top2;
 logic                  full_o_top, full_o_top2;
-logic [DWIDTH_TOP:0]   usedw_o_top, usedw_o_top2;
+logic [AWIDTH_TOP:0]   usedw_o_top, usedw_o_top2;
 
 logic                  almost_full_o_top, almost_full_o_top2;  
 logic                  almost_empty_o_top, almost_empty_o_top2;

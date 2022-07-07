@@ -17,7 +17,7 @@ module fifo #(
   output logic              full_o,
   output logic [AWIDTH:0]   usedw_o,
 
-  output logic              almost_full_o,  
+  output logic              almost_full_o,
   output logic              almost_empty_o
 );
 
@@ -27,9 +27,8 @@ logic [AWIDTH:0]   next_rdaddr;
 logic [AWIDTH:0]   next_wraddr;
 logic [AWIDTH:0]   first_valid_word;
 
-(* ramstyle = "M10K" *) logic [DWIDTH-1:0] mem [2**AWIDTH-1:0]; //Inffering mem to block RAM type M10K
+(* ramstyle = "M10K" *) logic [DWIDTH-1:0] mem [2**AWIDTH-1:0]; //Inferring mem to block RAM type M10K
 
-int                first_write;
 logic              valid_rd;
 logic              valid_wr;
 

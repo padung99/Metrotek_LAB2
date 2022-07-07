@@ -2,9 +2,11 @@ set path_to_library C:/intelFPGA_lite/18.1/quartus/eda/sim_lib
 vlib work
 
 set source_file {
-  "../rtl/fifo.sv"
+  "../../rtl/fifo/fifo.sv"
   "top_tb.sv"
 }
+
+
 vlog $path_to_library/altera_mf.v
 
 foreach files $source_file {
