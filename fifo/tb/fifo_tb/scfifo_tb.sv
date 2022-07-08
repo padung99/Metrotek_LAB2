@@ -263,10 +263,10 @@ initial
     gen_data( data_gen, full_data_wr );
     wr_until_full( full_data_wr, data_write );
     rd_until_empty( data_read );
-    // fork
-    //   wr_fifo( data_gen, data_write );
-    //   rd_fifo( data_read );
-    // join
+    fork
+      wr_fifo( data_gen, data_write );
+      rd_fifo( data_read );
+    join
     testing( data_read, data_write );
 
     $display( "Test done!" );

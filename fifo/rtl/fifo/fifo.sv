@@ -27,10 +27,20 @@ logic [AWIDTH:0]   next_rdaddr;
 logic [AWIDTH:0]   next_wraddr;
 logic [AWIDTH:0]   first_valid_word;
 
-(* ramstyle = "M10K" *) logic [DWIDTH-1:0] mem [2**AWIDTH-1:0]; //Inferring mem to block RAM type M10K
+(* ramstyle = "M10K" *) logic [DWIDTH-1:0] mem [2**AWIDTH-1:0];//Inferring mem to block RAM type M10K
 
 logic              valid_rd;
 logic              valid_wr;
+logic              top_data_fifo;
+
+logic empty_latency1; 
+logic empty_latency2; 
+
+logic [AWIDTH-1:0] write_latency1; 
+logic [AWIDTH-1:0] write_latency2;
+
+logic [2**AWIDTH-1:0] data_ready;
+logic [2**AWIDTH-1:0] data_shown;
 
 always_ff @( posedge clk_i )
   begin
@@ -44,6 +54,9 @@ always_ff @( posedge clk_i )
 always_ff @( posedge clk_i )
   begin
     if( srst_i )
+    // if( SHOWAHEAD == "ON" )
+    //   rd_addr <= (1<<AWIDTH) - 1 ;
+    // else
       rd_addr <= (AWIDTH+1)'(0);
     else
       if( valid_rd )
@@ -54,10 +67,13 @@ assign valid_rd         = rdreq_i  && !empty_o;
 assign valid_wr         = wrreq_i  && !full_o;
 assign next_rdaddr      = rd_addr + ( AWIDTH+1 )'(1);
 assign next_wraddr      = wr_addr + ( AWIDTH+1 )'(1);
-
+assign top_data_fifo    = ( rd_addr[AWIDTH-1:0] == (1<<AWIDTH) - 1 ) && ( usedw_o == 1 );
 //first_valid_word = 1 only at the begining
 //(when FIFO received first valid word, this word will be read out from fifo, when rdreq_i is asserted, fifo will read out next word )
-assign first_valid_word = ( ( usedw_o == (AWIDTH+1)'(1) ) && ( valid_wr == 1'b1 ) && ( empty_o == 1'b0 ) ) ? (AWIDTH)'(1): (AWIDTH)'(0);
+assign first_valid_word = ( ( usedw_o == (AWIDTH+1)'(1) ) &&
+                            ( valid_wr == 1'b1 ) &&
+                            ( empty_o == 1'b0 ) &&
+                            ( wr_addr[AWIDTH-1:0] == 1 ) ? (AWIDTH)'(1): (AWIDTH)'(0) );
 
 always_ff @( posedge clk_i )
   begin
@@ -72,97 +88,81 @@ always_ff @( posedge clk_i )
 
 always_ff @( posedge clk_i )
   begin
-    if( srst_i )
-      if (REGISTER_OUTPUT == "ON")
-        q_o <= (DWIDTH)'(0);
-      else
-          q_o <= {DWIDTH{1'bX}};
-  end
-
-// always_ff @( posedge clk_i )
-//   begin
-//     if( SHOWAHEAD == "OFF" )
-//       begin
-//         if( valid_rd )
-          
-//       end
-//   end
-always_ff @( posedge clk_i )
-  begin
     if( valid_rd )
       begin
-        // if( empty_o )
-        //   q_o <= {DWIDTH{1'b0}};
-        // else
-      if( rd_addr[AWIDTH-1:0] == ((1<<AWIDTH) -1 ) ) //1111
+        if( ( usedw_o == 1 ) )
+          empty_o <= 1'b1;
+        else
+          if (data_shown[write_latency1] == 1'b0)
+            empty_o <= 1'b0;
+      if( rd_addr[AWIDTH-1:0] == (1<<AWIDTH) -1 )
         begin
-          if( SHOWAHEAD == "ON" )
+          if ((write_latency1 == 0) || (data_ready[0] == 1'b1))
             begin
-              if( (usedw_o == 1) && (!full_o) )
+              if (data_shown[0] == 1'b1)
                 begin
-                  if( valid_wr )
-                    q_o <= data_i;
-                  else
-                    q_o <= {DWIDTH{1'b0}};
+                    q_o <= mem[0];
+                    data_shown[0] <= 1'b0;
+                    data_ready[0] <= 1'b0;
                 end
-              else
-                q_o <= mem[0];
             end
-          else
-            q_o <= mem[rd_addr[AWIDTH-1:0]];
         end
       else
         begin
-          if( SHOWAHEAD == "ON" )
+          if ((write_latency1 == next_rdaddr[AWIDTH-1:0]) || (data_ready[next_rdaddr[AWIDTH-1:0]] == 1'b1))
             begin
-              if( (usedw_o == 1) && (!full_o))
-                q_o <= {DWIDTH{1'bX}};
-              else
-                q_o <= mem[next_rdaddr[AWIDTH-1:0]]; /////
-            end
-          else
-            q_o <= mem[rd_addr[AWIDTH-1:0]];
+                if (data_shown[next_rdaddr[AWIDTH-1:0]] == 1'b1)
+                begin
+                    q_o <= mem[next_rdaddr[AWIDTH-1:0]];
+                    data_shown[next_rdaddr[AWIDTH-1:0]] <= 1'b0;
+                    data_ready[next_rdaddr[AWIDTH-1:0]] <= 1'b0;
+                end
+            end          
         end
-
-      end
-    else
-      if( !empty_o && valid_wr && SHOWAHEAD == "ON" )
-        q_o <= mem[rd_addr[AWIDTH-1:0]];
-        
-  end
-// always_ff @( posedge clk_i )
-//   begin
-//     if( SHOWAHEAD == "ON")
-//       begin
-//         //On showahead mode, fifo will read out next data word , EXCEPT the begining, when valid_rd is deasserted
-//         //but first data word has written to fifo, fifo will automatically output this first word
-//         if( valid_rd || first_valid_word == (AWIDTH)'(1) ) 
-//           q_o <= mem[next_rdaddr[AWIDTH-1:0]-first_valid_word];
-//       end
-//     else
-//       if( valid_rd )
-//         q_o <= mem[rd_addr[AWIDTH-1:0]];
-//   end
-
-/////////////////////////////////////////////
-always_ff @( negedge clk_i )
-  begin
-    if( !empty_o )
-      begin
-        if( SHOWAHEAD == "ON" )
-          q_o <= mem[rd_addr[AWIDTH-1:0]];
       end
   end
 
 always_ff @( posedge clk_i )
   begin
     if( valid_wr )
-      mem[wr_addr[AWIDTH-1:0]] <= data_i;
+      begin
+        mem[wr_addr[AWIDTH-1:0]] <= data_i;
+        empty_latency1 <= 1'b0;
+        write_latency1 <= wr_addr[AWIDTH-1:0];                    
+        data_shown[wr_addr[AWIDTH-1:0]] <= 1'b1;
+        data_ready[wr_addr[AWIDTH-1:0]] <= 1'bx;
+      end
+  end
+
+always_ff @( posedge clk_i )
+  begin
+  write_latency2 <= write_latency1;
+  if (write_latency2 !== write_latency1)
+    data_ready[write_latency1] <= 1'b1;
+
+  if (data_shown[write_latency1]==1'b1)
+    begin
+      if ((rd_addr[AWIDTH-1:0] == write_latency1) || srst_i)
+        begin
+          if (!(srst_i === 1'b1))
+            begin
+                if (write_latency1 !== 1'bx)
+                  begin
+                    q_o <= mem[write_latency1];
+                    data_shown[write_latency1] <= 1'b0;
+                    data_ready[write_latency1] <= 1'b0;
+
+                    if (!valid_rd)
+                        empty_o <= empty_latency1;
+                  end
+            end
+        end
+    end 
   end
 
 assign almost_empty_o = ( usedw_o < ALMOST_EMPTY_VALUE );
 assign almost_full_o  = ( usedw_o >= ALMOST_FULL_VALUE );
-assign empty_o        = ( wr_addr == rd_addr );
+// assign empty_o        = ( wr_addr == rd_addr );
 assign full_o         = ( wr_addr[AWIDTH-1:0] == rd_addr[AWIDTH-1:0] ) &&
                         ( wr_addr[AWIDTH] != rd_addr[AWIDTH] );
 
