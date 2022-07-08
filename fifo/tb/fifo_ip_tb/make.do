@@ -7,7 +7,6 @@ set source_file {
   "fifo_ip_tb.sv"
 }
 
-
 vlog $path_to_library/altera_mf.v
 
 foreach files $source_file {

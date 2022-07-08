@@ -1,5 +1,5 @@
 `timescale 1 ps / 1 ps
-module top_tb;
+module scfifo_tb;
 
 parameter DWIDTH_TOP             = 16;
 parameter AWIDTH_TOP             = 4;
@@ -46,34 +46,34 @@ default clocking cb
   @ (posedge clk_i_top); 
 endclocking
 
-fifo #(
-  .DWIDTH             ( DWIDTH_TOP             ),
-  .AWIDTH             ( AWIDTH_TOP             ),
-  .SHOWAHEAD          ( SHOWAHEAD_TOP          ),
-  .ALMOST_FULL_VALUE  ( ALMOST_FULL_VALUE_TOP  ),
-  .ALMOST_EMPTY_VALUE ( ALMOST_EMPTY_VALUE_TOP ),
-  .REGISTER_OUTPUT    ( REGISTER_OUTPUT_TOP    )
-) dut1(
-  .clk_i          ( clk_i_top          ),
-  .srst_i         ( srst_i_tb          ),
-  .data_i         ( data_i_tb          ),
+// fifo #(
+//   .DWIDTH             ( DWIDTH_TOP             ),
+//   .AWIDTH             ( AWIDTH_TOP             ),
+//   .SHOWAHEAD          ( SHOWAHEAD_TOP          ),
+//   .ALMOST_FULL_VALUE  ( ALMOST_FULL_VALUE_TOP  ),
+//   .ALMOST_EMPTY_VALUE ( ALMOST_EMPTY_VALUE_TOP ),
+//   .REGISTER_OUTPUT    ( REGISTER_OUTPUT_TOP    )
+// ) dut1(
+//   .clk_i          ( clk_i_top          ),
+//   .srst_i         ( srst_i_tb          ),
+//   .data_i         ( data_i_tb          ),
 
-  .wrreq_i        ( wrreq_i_tb         ),
-  .rdreq_i        ( rdreq_i_tb         ),
-  .q_o            ( q_o_top            ),
-  .empty_o        ( empty_o_top        ),
-  .full_o         ( full_o_top         ),
-  .usedw_o        ( usedw_o_top        ),
+//   .wrreq_i        ( wrreq_i_tb         ),
+//   .rdreq_i        ( rdreq_i_tb         ),
+//   .q_o            ( q_o_top            ),
+//   .empty_o        ( empty_o_top        ),
+//   .full_o         ( full_o_top         ),
+//   .usedw_o        ( usedw_o_top        ),
 
-  .almost_full_o  ( almost_full_o_top  ),
-  .almost_empty_o ( almost_empty_o_top )
-);
+//   .almost_full_o  ( almost_full_o_top  ),
+//   .almost_empty_o ( almost_empty_o_top )
+// );
 
 scfifo #(
   .add_ram_output_register ( REGISTER_OUTPUT_TOP     ),
   .almost_empty_value      ( ALMOST_EMPTY_VALUE_TOP  ),
   .almost_full_value       ( ALMOST_FULL_VALUE_TOP   ),
-  .intended_device_family  ( ""              ),
+  .intended_device_family  ( "Cyclone V"             ),
   .lpm_hint                ("RAM_BLOCK_TYPE=M10K"    ),
   .lpm_numwords            ( 2**AWIDTH_TOP           ),
   .lpm_showahead           ( SHOWAHEAD_TOP           ),
@@ -89,12 +89,12 @@ scfifo #(
   .rdreq        ( rdreq_i_tb          ),
   .sclr         ( srst_i_tb           ),
   .wrreq        ( wrreq_i_tb          ),
-  .almost_empty ( almost_empty_o_top2 ),
-  .almost_full  ( almost_full_o_top2  ),
-  .empty        ( empty_o_top2        ),
-  .full         ( full_o_top2         ),
-  .q            ( q_o_top2            ),
-  .usedw        ( usedw_o_top2        ),
+  .almost_empty ( almost_empty_o_top ),
+  .almost_full  ( almost_full_o_top  ),
+  .empty        ( empty_o_top        ),
+  .full         ( full_o_top         ),
+  .q            ( q_o_top            ),
+  .usedw        ( usedw_o_top        ),
   .aclr         (                     ),
   .eccstatus    (                     )
 );
@@ -263,10 +263,10 @@ initial
     gen_data( data_gen, full_data_wr );
     wr_until_full( full_data_wr, data_write );
     rd_until_empty( data_read );
-    fork
-      wr_fifo( data_gen, data_write );
-      rd_fifo( data_read );
-    join
+    // fork
+    //   wr_fifo( data_gen, data_write );
+    //   rd_fifo( data_read );
+    // join
     testing( data_read, data_write );
 
     $display( "Test done!" );

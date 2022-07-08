@@ -6,6 +6,9 @@ set source_file {
   "top_tb.sv"
 }
 
+#set source_file {
+#  "scfifo_tb.sv"
+#}
 
 vlog $path_to_library/altera_mf.v
 
@@ -21,5 +24,6 @@ vsim $fbasename
 add log -r /*
 add wave -group dut1 /top_tb/dut1/*
 add wave -group dut2 /top_tb/dut2/*
+#add wave -r *
 view -undock wave
 run -all

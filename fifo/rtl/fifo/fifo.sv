@@ -57,7 +57,7 @@ assign next_wraddr      = wr_addr + ( AWIDTH+1 )'(1);
 
 //first_valid_word = 1 only at the begining
 //(when FIFO received first valid word, this word will be read out from fifo, when rdreq_i is asserted, fifo will read out next word )
-assign first_valid_word = ( ( usedw_o == (AWIDTH+1)'(1) ) && ( valid_wr ) && ( !empty_o ) ) ? (AWIDTH)'(1): (AWIDTH)'(0);
+assign first_valid_word = ( ( usedw_o == (AWIDTH+1)'(1) ) && ( valid_wr == 1'b1 ) && ( empty_o == 1'b0 ) ) ? (AWIDTH)'(1): (AWIDTH)'(0);
 
 always_ff @( posedge clk_i )
   begin
@@ -74,23 +74,84 @@ always_ff @( posedge clk_i )
   begin
     if( srst_i )
       if (REGISTER_OUTPUT == "ON")
-          q_o <= (DWIDTH)'(0);
+        q_o <= (DWIDTH)'(0);
       else
           q_o <= {DWIDTH{1'bX}};
   end
 
+// always_ff @( posedge clk_i )
+//   begin
+//     if( SHOWAHEAD == "OFF" )
+//       begin
+//         if( valid_rd )
+          
+//       end
+//   end
 always_ff @( posedge clk_i )
   begin
-    if( SHOWAHEAD == "ON")
+    if( valid_rd )
       begin
-        //On showahead mode, fifo will read out next data word , EXCEPT the begining, when valid_rd is deasserted
-        //but first data word has written to fifo, fifo will automatically output this first word
-        if( valid_rd || first_valid_word == (AWIDTH)'(1) ) 
-          q_o <= mem[next_rdaddr[AWIDTH-1:0]-first_valid_word];
+        // if( empty_o )
+        //   q_o <= {DWIDTH{1'b0}};
+        // else
+      if( rd_addr[AWIDTH-1:0] == ((1<<AWIDTH) -1 ) ) //1111
+        begin
+          if( SHOWAHEAD == "ON" )
+            begin
+              if( (usedw_o == 1) && (!full_o) )
+                begin
+                  if( valid_wr )
+                    q_o <= data_i;
+                  else
+                    q_o <= {DWIDTH{1'b0}};
+                end
+              else
+                q_o <= mem[0];
+            end
+          else
+            q_o <= mem[rd_addr[AWIDTH-1:0]];
+        end
+      else
+        begin
+          if( SHOWAHEAD == "ON" )
+            begin
+              if( (usedw_o == 1) && (!full_o))
+                q_o <= {DWIDTH{1'bX}};
+              else
+                q_o <= mem[next_rdaddr[AWIDTH-1:0]]; /////
+            end
+          else
+            q_o <= mem[rd_addr[AWIDTH-1:0]];
+        end
+
       end
     else
-      if( valid_rd )
+      if( !empty_o && valid_wr && SHOWAHEAD == "ON" )
         q_o <= mem[rd_addr[AWIDTH-1:0]];
+        
+  end
+// always_ff @( posedge clk_i )
+//   begin
+//     if( SHOWAHEAD == "ON")
+//       begin
+//         //On showahead mode, fifo will read out next data word , EXCEPT the begining, when valid_rd is deasserted
+//         //but first data word has written to fifo, fifo will automatically output this first word
+//         if( valid_rd || first_valid_word == (AWIDTH)'(1) ) 
+//           q_o <= mem[next_rdaddr[AWIDTH-1:0]-first_valid_word];
+//       end
+//     else
+//       if( valid_rd )
+//         q_o <= mem[rd_addr[AWIDTH-1:0]];
+//   end
+
+/////////////////////////////////////////////
+always_ff @( negedge clk_i )
+  begin
+    if( !empty_o )
+      begin
+        if( SHOWAHEAD == "ON" )
+          q_o <= mem[rd_addr[AWIDTH-1:0]];
+      end
   end
 
 always_ff @( posedge clk_i )
