@@ -8,12 +8,14 @@ parameter ALMOST_FULL_VALUE_TOP  = 2**AWIDTH_TOP-3;
 parameter ALMOST_EMPTY_VALUE_TOP = 3;
 parameter REGISTER_OUTPUT_TOP    = "OFF";
 
-parameter FIFO_FULL_DATA         = 2**AWIDTH_TOP + 5;
+parameter PUSH_TO_FULL           = 2**AWIDTH_TOP + 5;
 parameter MAX_DATA_RANDOM        = 100;
-parameter MAX_DATA_SEND          = MAX_DATA_RANDOM + FIFO_FULL_DATA;
 
-parameter READ_UNTIL_EMPTY       = FIFO_FULL_DATA;
+parameter MANY_WRITE_QUERIES          = 100;
+parameter MANY_READ_QUERIES           = 100;
 
+parameter MAX_DATA_SEND          = PUSH_TO_FULL + MANY_WRITE_QUERIES + MANY_READ_QUERIES;
+parameter READ_UNTIL_EMPTY       = PUSH_TO_FULL;
 
 logic                  srst_i_tb;
 logic [DWIDTH_TOP-1:0] data_i_tb;
@@ -29,12 +31,12 @@ logic [AWIDTH_TOP:0]   usedw_o_top, usedw_o_top2;
 logic                  almost_full_o_top, almost_full_o_top2;  
 logic                  almost_empty_o_top, almost_empty_o_top2;
 
-bit q_o_error;
-bit empty_o_error;
-bit full_o_error;
-bit usedw_o_error;
-bit almost_full_o_error;
-bit almost_empty_o_error;
+// bit q_o_error;
+// bit empty_o_error;
+// bit full_o_error;
+// bit usedw_o_error;
+// bit almost_full_o_error;
+// bit almost_empty_o_error;
 
 bit clk_i_top;
 int cnt_wr_data;
@@ -43,7 +45,7 @@ initial
     #5 clk_i_top = !clk_i_top;
 
 default clocking cb
-  @ (posedge clk_i_top); 
+  @ (posedge clk_i_top);
 endclocking
 
 fifo #(
@@ -103,26 +105,33 @@ mailbox #( logic [DWIDTH_TOP-1:0] ) data_gen   = new();
 mailbox #( logic [DWIDTH_TOP-1:0] ) data_write = new();
 mailbox #( logic [DWIDTH_TOP-1:0] ) data_read  = new();
 mailbox #( logic [DWIDTH_TOP-1:0] ) full_data_wr = new();
-
+mailbox #( logic [DWIDTH_TOP-1:0] ) data_rd_qr = new();
+mailbox #( logic [DWIDTH_TOP-1:0] ) data_wr_qr = new();
 
 task gen_data( mailbox #( logic [DWIDTH_TOP-1:0] ) _data,
-               mailbox #( logic [DWIDTH_TOP-1:0] ) _full_wr
+               mailbox #( logic [DWIDTH_TOP-1:0] ) _full_wr,
+               mailbox #( logic [DWIDTH_TOP-1:0] ) _rd,
+               mailbox #( logic [DWIDTH_TOP-1:0] ) _wr
              );
 
 logic [DWIDTH_TOP-1:0] data_s;
 
-  for( int i = 0; i < MAX_DATA_SEND; i++ )
+  for( int i = 0; i < PUSH_TO_FULL; i++ )
     begin
-      if( i >= FIFO_FULL_DATA )
-        begin
-          data_s = $urandom_range( 2**DWIDTH_TOP-1,0 );
-          _data.put( data_s );
-        end
-      else
-        begin
-          data_s = $urandom_range( 2**DWIDTH_TOP-1,0 );
-          _full_wr.put( data_s );
-        end
+      data_s = $urandom_range( 2**DWIDTH_TOP-1,0 );
+      _full_wr.put( data_s );
+    end
+
+  for( int i = 0; i < MANY_WRITE_QUERIES; i++ )
+    begin
+      data_s = $urandom_range( 2**DWIDTH_TOP-1,0 );
+      _wr.put( data_s );
+    end
+
+  for( int i = 0; i < MANY_READ_QUERIES; i++ )
+    begin
+      data_s = $urandom_range( 2**DWIDTH_TOP-1,0 );
+      _rd.put( data_s );
     end
 endtask
 
@@ -133,8 +142,10 @@ logic [DWIDTH_TOP-1:0] data_wr;
 
 while( _full_wr.num() != 0 )
   begin
+    cnt_wr_data++;
     _full_wr.get( data_wr );
     wrreq_i_tb = 1'b1;
+    // $display("cnt_wr_data: %0d, wr_data: %x", cnt_wr_data, data_wr);
     if( full_o_top == 1'b0 && wrreq_i_tb == 1'b1 )
       begin
         // _data_s.put( data_wr );
@@ -151,6 +162,8 @@ task rd_until_empty( mailbox #( logic [DWIDTH_TOP-1:0] ) _rd_data );
 // i = 0;
 for( int i = 0; i < READ_UNTIL_EMPTY; i++ )
   begin
+    // $display("cnt_wr_data: %0d", cnt_wr_data);
+    cnt_wr_data++;
     rdreq_i_tb = 1'b1;
     // if( empty_o_top == 1'b0 && rdreq_i_tb == 1'b1 && q_o_top >= (DWIDTH_TOP)'(0) )
     //   _rd_data.put( q_o_top );
@@ -158,51 +171,121 @@ for( int i = 0; i < READ_UNTIL_EMPTY; i++ )
   end
 endtask
 
-task wr_fifo ( mailbox #( logic [DWIDTH_TOP-1:0] ) _gen_data,
-               mailbox #( logic [DWIDTH_TOP-1:0] ) _data_s
-             );
+task wr_queries ( input int _lower_wr,
+                        int _upper_wr, 
+                  mailbox #( logic [DWIDTH_TOP-1:0] ) _wr
+                );
+
 logic [DWIDTH_TOP-1:0] data_wr;
 int pause_wr;
+int cnt_wr;
 
-while( _gen_data.num() != 0 )
+while( _wr.num() != 0 )
   begin
+
     if( pause_wr == 0 )
       begin
+        // $display("cnt_wr_data: %0d, wr_data: %x", cnt_wr_data, data_wr);
         cnt_wr_data++;
-        _gen_data.get( data_wr );
-        pause_wr   = $urandom_range( 6,1 );
-        wrreq_i_tb = $urandom_range( 1,0 );
+        _wr.get( data_wr );
+        pause_wr   = $urandom_range( _upper_wr,_lower_wr );
+        wrreq_i_tb = 0;
+      end
+    else
+      begin
+        wrreq_i_tb = 1;
       end
 
     if( full_o_top == 1'b0 && wrreq_i_tb == 1'b1 )
       begin
-        _data_s.put( data_wr );
+        // _data_wr.put( data_wr );
         data_i_tb = data_wr;
       end
     pause_wr--;
     ##1;
+    // $display("[%0d] data_wr: %x", _wr.num(), data_wr );
   end
+  // $display("Write done!!");
 endtask
 
-task rd_fifo ( mailbox #( logic [DWIDTH_TOP-1:0] ) _rd_data );
+task rd_fifo ( input int cnt_data_rd,
+                     int _lower_rd,
+                     int _upper_rd );
 
 int pause_rd;
 int i;
 i = 0;
-while( cnt_wr_data < MAX_DATA_RANDOM )
+while( cnt_wr_data < cnt_data_rd )
   begin
+    // $display("cnt_wr_data: %0d", cnt_wr_data);
     if( pause_rd == 0 )
       begin
-        pause_rd   = $urandom_range( 6,1 );
-        rdreq_i_tb = $urandom_range( 1,0 );
+        pause_rd   = $urandom_range( _upper_rd,_lower_rd );
+        rdreq_i_tb = 0;
       end
+    else
+      rdreq_i_tb = 1;
     //Using conditon q_o_tb >= (DWIDTH_TB)'(0) to ignore Unknow value 'X' when change parameter showahead to "OFF"
-    if( empty_o_top == 1'b0 && rdreq_i_tb == 1'b1 && q_o_top >= (DWIDTH_TOP)'(0) )
-      _rd_data.put( q_o_top );
+    // if( empty_o_top == 1'b0 && rdreq_i_tb == 1'b1 && q_o_top >= (DWIDTH_TOP)'(0) )
+    //   _rd_data.put( q_o_top );
     pause_rd--;
     ##1;
   end
+  // $display("Read done!!");
 endtask
+
+task compare_ouput( input int cnt_data, string task_name );
+
+bit q_o_error;
+bit empty_o_error;
+bit full_o_error;
+bit usedw_o_error;
+bit almost_full_o_error;
+bit almost_empty_o_error;
+
+  forever
+    begin
+      ##1;
+      if( q_o_top != q_o_top2 )
+        begin
+          q_o_error = 1;
+          $error("q mismatch");
+        end
+      if( almost_empty_o_top != almost_empty_o_top2 )
+      begin
+        almost_empty_o_error = 1;
+        $error("almost_empty mismatch");
+      end
+
+      if( almost_full_o_top != almost_full_o_top2 )
+        begin
+          almost_full_o_error = 1;
+          $error("almost_full mismatch");
+        end
+      if( full_o_top != full_o_top2 )
+        begin
+          full_o_error = 1;
+          $error("full mismatch");
+        end
+      if( empty_o_top != empty_o_top2 )
+        begin
+          empty_o_error = 1;
+          $error("empty mismatch");
+        end
+      if( usedw_o_top != usedw_o_top )
+        begin
+          usedw_o_error = 1;
+          $error("usedw mismatch");
+        end
+      if (cnt_wr_data >= cnt_data)
+        break;
+    end
+  
+  if( !q_o_error && !almost_empty_o_error && !almost_full_o_error && !full_o_error && !empty_o_error && !usedw_o_error )
+    $display( "%s: Output match", task_name );
+    
+
+endtask;
 
 task testing ( mailbox #( logic [DWIDTH_TOP-1:0] ) _rd_data,
                mailbox #( logic [DWIDTH_TOP-1:0] ) _data_s
@@ -259,15 +342,37 @@ initial
     srst_i_tb <= 1'b1;
     ##1;
     srst_i_tb <= 1'b0;
-
-    gen_data( data_gen, full_data_wr );
-    wr_until_full( full_data_wr, data_write );
-    rd_until_empty( data_read );
+    
+    gen_data( data_gen, full_data_wr, data_rd_qr, data_wr_qr );
     fork
-      wr_fifo( data_gen, data_write );
-      rd_fifo( data_read );
+      wr_until_full( full_data_wr, data_write );
+      compare_ouput(PUSH_TO_FULL, "Write data until full");
     join
-    testing( data_read, data_write );
+
+    cnt_wr_data = 0;
+
+    fork
+      rd_until_empty( data_read );
+      compare_ouput( READ_UNTIL_EMPTY, "Read data from fifo until empty" );
+    join
+
+    cnt_wr_data = 0;
+
+    fork
+      wr_queries( 4,6, data_wr_qr );
+      rd_fifo( MANY_WRITE_QUERIES, 1,2 );
+      compare_ouput( MANY_WRITE_QUERIES, "Write queries more than read queries" );
+    join
+  
+    cnt_wr_data = 0;
+    
+    fork
+      wr_queries( 1,2, data_rd_qr );
+      rd_fifo( MANY_READ_QUERIES, 4,6 );
+      compare_ouput( MANY_READ_QUERIES, "Read queries more than write queries" );
+    join
+  
+    // testing( data_read, data_write );
 
     $display( "Test done!" );
 

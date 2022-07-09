@@ -28,8 +28,8 @@ logic [AWIDTH:0]   next_wraddr;
 // logic [AWIDTH:0]   first_valid_word;
 // logic  [DWIDTH-1:0] q_o;
 (* ramstyle = "M10K" *) logic [DWIDTH-1:0] mem [2**AWIDTH-1:0];//Inferring mem to block RAM type M10K
-(* ramstyle = "M4K" *) logic              data_received [2**AWIDTH-1:0];
-(* ramstyle = "M4K" *) logic              data_shown    [2**AWIDTH-1:0];
+logic [2**AWIDTH-1:0] data_received;
+logic [2**AWIDTH-1:0] data_shown;
 
 logic              valid_rd;
 logic              valid_wr;
@@ -38,7 +38,7 @@ logic              valid_wr;
 // logic empty_latency1; 
 // logic empty_latency2; 
 
-logic [AWIDTH-1:0] wr_delay; 
+logic [AWIDTH-1:0] wr_delay;
 logic [AWIDTH-1:0] write_latency2;
 
 // logic [2**AWIDTH-1:0] data_received;
@@ -189,7 +189,7 @@ always_ff @( posedge clk_i )
           if ((rd_addr[AWIDTH-1:0] == wr_delay))
               begin
                 // data_shown[wr_delay] <= 1'b0; /////////////////
-                data_received[wr_delay] <= 1'b0; //////////////
+                data_received[wr_delay] <= 1'b0;//////////////
               end
         end    
   end

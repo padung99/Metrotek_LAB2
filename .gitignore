@@ -1,5 +1,7 @@
 new_altera_mf.sv
 altera_mf.v
+fifo/tb/fifo_tb/scfifo_tb.sv
+make_scfifo.do
 work
 db
 greybox_tmp
