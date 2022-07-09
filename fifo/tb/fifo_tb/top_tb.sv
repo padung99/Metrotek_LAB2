@@ -31,12 +31,6 @@ logic [AWIDTH_TOP:0]   usedw_o_top, usedw_o_top2;
 logic                  almost_full_o_top, almost_full_o_top2;  
 logic                  almost_empty_o_top, almost_empty_o_top2;
 
-// bit q_o_error;
-// bit empty_o_error;
-// bit full_o_error;
-// bit usedw_o_error;
-// bit almost_full_o_error;
-// bit almost_empty_o_error;
 
 bit clk_i_top;
 int cnt_wr_data;
@@ -145,12 +139,11 @@ while( _full_wr.num() != 0 )
     cnt_wr_data++;
     _full_wr.get( data_wr );
     wrreq_i_tb = 1'b1;
-    // $display("cnt_wr_data: %0d, wr_data: %x", cnt_wr_data, data_wr);
+
     if( full_o_top == 1'b0 && wrreq_i_tb == 1'b1 )
       begin
         _data_wr.put( data_wr );
         data_i_tb = data_wr;
-        // $display("[%0d] write: %x",_full_wr.num(), data_i_tb);
       end
     ##1;
   end
@@ -159,17 +152,13 @@ endtask
 
 task rd_until_empty( mailbox #( logic [DWIDTH_TOP-1:0] ) _data_rd );
 
-// int i;
-// i = 0;
 for( int i = 0; i < READ_UNTIL_EMPTY; i++ )
   begin
-    // $display("cnt_wr_data: %0d", cnt_wr_data);
     cnt_wr_data++;
     rdreq_i_tb = 1'b1;
     if( empty_o_top == 1'b0 && rdreq_i_tb == 1'b1 )
       begin
         _data_rd.put( q_o_top );
-        // $display("[%0d] read: q_o: %x", i, q_o_top);
       end
     ##1;
   end
@@ -190,7 +179,6 @@ while( _wr.num() != 0 )
 
     if( pause_wr == 0 )
       begin
-        // $display("cnt_wr_data: %0d, wr_data: %x", cnt_wr_data, data_wr);
         cnt_wr_data++;
         _wr.get( data_wr );
         pause_wr   = $urandom_range( _upper_wr,_lower_wr );
@@ -205,13 +193,11 @@ while( _wr.num() != 0 )
       begin
         _data_wr.put( data_wr );
         data_i_tb = data_wr;
-        // $display("[%0d] write: %x",_wr.num(), data_i_tb );
       end
     pause_wr--;
     ##1;
-    // $display("[%0d] data_wr: %x", _wr.num(), data_wr );
   end
-  // $display("Write done!!");
+
 endtask
 
 task rd_fifo ( input int cnt_data_rd,
@@ -225,7 +211,6 @@ int i;
 i = 0;
 while( cnt_wr_data < cnt_data_rd )
   begin
-    // $display("cnt_wr_data: %0d", cnt_wr_data);
     if( pause_rd == 0 )
       begin
         pause_rd   = $urandom_range( _upper_rd,_lower_rd );
@@ -233,16 +218,14 @@ while( cnt_wr_data < cnt_data_rd )
       end
     else
       rdreq_i_tb = 1;
-    //Using conditon q_o_tb >= (DWIDTH_TB)'(0) to ignore Unknow value 'X' when change parameter showahead to "OFF"
+   
     if( empty_o_top == 1'b0 && rdreq_i_tb == 1'b1 )
       begin
         _data_rd.put( q_o_top );
-        // $display("read: %x", q_o_top );
       end
     pause_rd--;
     ##1;
   end
-  // $display("Read done!!");
 endtask
 
 task compare_ouput( input int cnt_data, string task_name );
@@ -262,53 +245,36 @@ bit almost_empty_error;
           q_error = 1;
           $error("q mismatch");
         end
-      // else
-      //   q_error = 1;
-      //   $display("q: fifo: %x, scfifo: %x",q_o_top, q_o_top2 );
 
       if( almost_empty_o_top != almost_empty_o_top2 )
       begin
         almost_empty_error = 1;
         $error("almost_empty mismatch");
       end
-      // else
-      //   // $display("almost_empty: fifo: %x, scfifo: %x",almost_empty_o_top, almost_empty_o_top2 );
 
       if( almost_full_o_top != almost_full_o_top2 )
         begin
           almost_full_error = 1;
           $error("almost_full mismatch");
         end
-      // else
-      //   almost_full_error = 0;
-      //   // $display("almost_full: fifo: %x, scfifo: %x",almost_full_o_top, almost_full_o_top2 );
 
       if( full_o_top != full_o_top2 )
         begin
           full_error = 1;
           $error("full mismatch");
         end
-      // else
-      //   full_error = 0;
-      //   // $display("full: fifo: %x, scfifo: %x",full_o_top, full_o_top2 );
 
       if( empty_o_top != empty_o_top2 )
         begin
           empty_error = 1;
           $error("empty mismatch");
         end
-      // else
-      //   empty_error = 0;
-      //   // $display("empty: fifo: %x, scfifo: %x",empty_o_top, empty_o_top2 );
 
       if( usedw_o_top != usedw_o_top2 )
         begin
           usedw_error = 1;
           $error("usedw mismatch");
         end
-      // else
-      //   usedw_error = 0;
-      //   // $display("usedw: fifo: %x, scfifo: %x",usedw_o_top, usedw_o_top2 );
 
       if (cnt_wr_data >= cnt_data)
         break;
@@ -334,11 +300,9 @@ while( _rd_data.num() != 0 && _data_s.num() != 0 )
   begin
     _rd_data.get( new_rd_data );
     _data_s.get( new_data_s );
-    // $display("[%0d] Send: %x, read: %x",_rd_data.num(), new_data_s, new_rd_data );
-
+    
     if( new_rd_data != new_data_s )
       begin
-        // $error("Module runs with errors!!!!\n");
         data_error = 1;
         // $stop();
       end
