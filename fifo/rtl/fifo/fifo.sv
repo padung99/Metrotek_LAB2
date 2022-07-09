@@ -90,22 +90,27 @@ always_ff @( posedge clk_i )
 
 always_ff @( posedge clk_i )
   begin
-    if( valid_rd )
-      begin
-        if( usedw_o == 1 )
-          empty_o <= 1'b1;
-        else
-          begin
-            if (data_shown[wr_delay] == 1'b0)
-              empty_o <= 1'b0;
-          end
-      end
+    if( srst_i )
+      empty_o <= 1'b1;
     else
       begin
-        if (data_shown[wr_delay]==1'b1)
+        if( valid_rd )
           begin
-            if ((rd_addr[AWIDTH-1:0] == wr_delay))
-              empty_o <= 0;
+            if( usedw_o == 1 )
+              empty_o <= 1'b1;
+            else
+              begin
+                if (data_shown[wr_delay] == 1'b0)
+                  empty_o <= 1'b0;
+              end
+          end
+        else
+          begin
+            if (data_shown[wr_delay]==1'b1)
+              begin
+                if ((rd_addr[AWIDTH-1:0] == wr_delay))
+                  empty_o <= 0;
+              end
           end
       end
   end
