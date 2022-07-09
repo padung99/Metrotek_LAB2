@@ -181,6 +181,7 @@ while( _wr.num() != 0 )
       begin
         cnt_wr_data++;
         _wr.get( data_wr );
+        //Change _upper_wr,_lower_wr to change read frequency
         pause_wr   = $urandom_range( _upper_wr,_lower_wr );
         wrreq_i_tb = 0;
       end
@@ -213,6 +214,7 @@ while( cnt_wr_data < cnt_data_rd )
   begin
     if( pause_rd == 0 )
       begin
+        //Change _upper_rd,_lower_rd to change read frequency
         pause_rd   = $urandom_range( _upper_rd,_lower_rd );
         rdreq_i_tb = 0;
       end
@@ -347,7 +349,8 @@ initial
     ##1;
     srst_i_tb <= 1'b0;
     
-
+    
+    //Write to fifo until full
     gen_data( data_gen, full_data_wr, data_rd_qr, data_wr_qr );
     fork
       wr_until_full( full_data_wr, data_write );
@@ -355,14 +358,16 @@ initial
     join
 
     cnt_wr_data = 0;
-
+    
+    //Read from fifo until empty
     fork
       rd_until_empty( data_read );
       compare_ouput( READ_UNTIL_EMPTY, "Read data from fifo until empty" );
     join
 
     cnt_wr_data = 0;
-
+    
+    //Write queries more than read queries
     fork
       wr_queries( 4,6, data_wr_qr, data_write );
       rd_fifo( MANY_WRITE_QUERIES, 1,2, data_read );
@@ -371,7 +376,7 @@ initial
   
     cnt_wr_data = 0;
 
-
+    //Read queries more than write queries
     fork
       wr_queries( 1,2, data_rd_qr, data_write );
       rd_fifo( MANY_READ_QUERIES, 4,6, data_read );
