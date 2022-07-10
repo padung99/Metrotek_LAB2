@@ -122,7 +122,7 @@ always_ff @( posedge clk_i )
       begin
         if ((wr_delay_1_clk == next_rdaddr[AWIDTH-1:0]) || (data_received[next_rdaddr[AWIDTH-1:0]] == 1'b1))
           begin
-            if (data_shown[next_rdaddr[AWIDTH-1:0]] == 1'b1) //Check if data has been writen to mem
+            if (data_shown[next_rdaddr[AWIDTH-1:0]] == 1'b1) //Check if data has been written to mem
               data_shown[next_rdaddr[AWIDTH-1:0]] <= 1'b0;
           end          
       end
@@ -143,7 +143,7 @@ always_ff @( posedge clk_i )
       begin
         if ((wr_delay_1_clk == next_rdaddr[AWIDTH-1:0]) || (data_received[next_rdaddr[AWIDTH-1:0]] == 1'b1))
           begin
-            if ( data_shown[next_rdaddr[AWIDTH-1:0]] == 1'b1 ) //Check if data has been writen to mem
+            if ( data_shown[next_rdaddr[AWIDTH-1:0]] == 1'b1 ) //Check if data has been written to mem
               data_received[next_rdaddr[AWIDTH-1:0]] <= 1'b0;
           end          
       end
