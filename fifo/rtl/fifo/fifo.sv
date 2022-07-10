@@ -108,7 +108,7 @@ always_ff @( posedge clk_i )
           end     
       end
     
-    //after empty (after empty 1 clk, fifo will ouput first valid word)
+    //after empty (after empty 1 clk, fifo will output first valid word)
     if( data_shown[wr_delay_1_clk] == 1'b1 )
       begin
         if( rd_addr[AWIDTH-1:0] == wr_delay_1_clk )

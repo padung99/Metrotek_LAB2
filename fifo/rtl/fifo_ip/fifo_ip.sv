@@ -25,32 +25,56 @@ logic [AWIDTH:0]   wr_addr;
 logic [AWIDTH:0]   rd_addr;
 logic [AWIDTH:0]   next_rdaddr;
 logic [AWIDTH:0]   next_wraddr;
-logic [AWIDTH:0]   first_valid_word;
 
-logic              valid_rd;
-logic              valid_wr;
+//(* ramstyle = "M10K" *) logic [DWIDTH-1:0] mem [2**AWIDTH-1:0];//Inferring mem to block RAM type M10K
+logic [2**AWIDTH-1:0] data_received;
+logic [2**AWIDTH-1:0] data_shown;
+logic [DWIDTH-1:0]    q_tmp1;
+logic [DWIDTH-1:0]    q_tmp2;
 
-logic [AWIDTH:0]   rd_addr_mem;
-logic              valid_rd_mem;
+logic                 valid_rd;
+logic                 valid_wr;
+
+logic [AWIDTH-1:0]    wr_delay_1_clk;
+logic [AWIDTH-1:0]    wr_delay_2_clk;
+
+logic [AWIDTH:0]      rd_addr_mem1;
+logic [AWIDTH:0]      rd_addr_mem2;
+logic                 valid_rd_mem1;
+logic                 valid_rd_mem2;
+
+logic              q_condition;
 
 mem #(
   .DWIDTH_MEM ( DWIDTH ),
   .AWIDTH_MEM ( AWIDTH )
-) mem_inst (
-  .clock     ( clk_i                   ),
-	.data      ( data_i                  ),
-	.rdaddress ( rd_addr_mem[AWIDTH-1:0] ), 
-	.rden      ( valid_rd_mem            ), 
-	.wraddress ( wr_addr[AWIDTH-1:0]     ),
-	.wren      ( valid_wr                ),
-	.q         ( q_o                     )
+) mem_inst1 (
+  .clock     ( clk_i                    ),
+  .data      ( data_i                   ),
+  .rdaddress ( rd_addr_mem1[AWIDTH-1:0] ), 
+  .rden      ( valid_rd_mem1            ), 
+  .wraddress ( wr_addr[AWIDTH-1:0]      ),
+  .wren      ( valid_wr                 ),
+  .q         ( q_tmp1                   )
 );
 
+mem #(
+  .DWIDTH_MEM ( DWIDTH ),
+  .AWIDTH_MEM ( AWIDTH )
+) mem_inst2 (
+  .clock     ( clk_i                    ),
+  .data      ( data_i                   ),
+  .rdaddress ( rd_addr_mem2[AWIDTH-1:0] ), 
+  .rden      ( valid_rd_mem2            ), 
+  .wraddress ( wr_addr[AWIDTH-1:0]      ),
+  .wren      ( valid_wr                 ),
+  .q         ( q_tmp2                   )
+);
 
 always_ff @( posedge clk_i )
   begin
     if( srst_i )
-      wr_addr <= ( AWIDTH+1 )'(0);
+      wr_addr <= (AWIDTH+1)'(0);
     else
       if( valid_wr )
         wr_addr <= next_wraddr;
@@ -70,10 +94,6 @@ assign valid_wr         = wrreq_i  && !full_o;
 assign next_rdaddr      = rd_addr + ( AWIDTH+1 )'(1);
 assign next_wraddr      = wr_addr + ( AWIDTH+1 )'(1);
 
-//first_valid_word = 1 only at the begining
-//(when FIFO received first valid word, this word will be read out from fifo, when rdreq_i is asserted, fifo will read out next word )
-assign first_valid_word = ( ( usedw_o == (AWIDTH+1)'(1) ) && ( valid_wr ) && ( !empty_o ) ) ? (AWIDTH)'(1): (AWIDTH)'(0);
-
 always_ff @( posedge clk_i )
   begin
     if( srst_i )
@@ -88,30 +108,117 @@ always_ff @( posedge clk_i )
 always_ff @( posedge clk_i )
   begin
     if( srst_i )
-      if (REGISTER_OUTPUT == "ON")
-          q_o <= (DWIDTH)'(0);
-      else
-          q_o <= {DWIDTH{1'bX}};
+      empty_o <= 1'b1;
+    else
+      begin
+        if( valid_rd )
+          begin
+            if( usedw_o == 1 )
+              empty_o <= 1'b1;
+            else
+              begin
+                if ( data_shown[wr_delay_1_clk] == 1'b0 )
+                  empty_o <= 1'b0;
+              end
+          end
+        else
+          begin
+            if( data_shown[wr_delay_1_clk] == 1'b1 )
+              begin
+                if( rd_addr[AWIDTH-1:0] == wr_delay_1_clk )
+                  empty_o <= 0;
+              end
+          end
+      end
+  end
+
+assign valid_rd_mem1 = ( valid_rd )&&
+                       ( (wr_delay_1_clk == next_rdaddr[AWIDTH-1:0]) || (data_received[next_rdaddr[AWIDTH-1:0]] == 1'b1) )&&
+                       ( data_shown[next_rdaddr[AWIDTH-1:0]] == 1'b1 );
+assign rd_addr_mem1  = next_rdaddr[AWIDTH-1:0];
+
+assign valid_rd_mem2 = ( rd_addr[AWIDTH-1:0] == wr_delay_1_clk )&&
+                       ( data_shown[wr_delay_1_clk] == 1'b1 );
+assign rd_addr_mem2  = wr_delay_1_clk;
+
+always_ff @( posedge clk_i )
+  begin
+    if( valid_rd_mem1 )
+      q_condition <= 1'b1;
+    else
+      if( valid_rd_mem2 )
+        q_condition <= 1'b0;
   end
 
 always_comb
   begin
-    if( SHOWAHEAD == "ON" )
+    case( q_condition )
+      1'b1: q_o = q_tmp1;
+      1'b0: q_o = q_tmp2;
+    endcase
+  end
+
+always_ff @( posedge clk_i )
+  begin
+    if( valid_rd )
       begin
-        rd_addr_mem  = next_rdaddr[AWIDTH-1:0]-first_valid_word;
-        valid_rd_mem = valid_rd || first_valid_word == (AWIDTH)'(1);
+        if ((wr_delay_1_clk == next_rdaddr[AWIDTH-1:0]) || (data_received[next_rdaddr[AWIDTH-1:0]] == 1'b1))
+          begin
+            if (data_shown[next_rdaddr[AWIDTH-1:0]] == 1'b1) //Check if data has been writen to mem
+              data_shown[next_rdaddr[AWIDTH-1:0]] <= 1'b0;
+          end          
       end
-    else
+
+      if( valid_wr )
+        data_shown[wr_addr[AWIDTH-1:0]] <= 1'b1;
+
+      if( data_shown[wr_delay_1_clk] == 1'b1 )
+        begin
+          if( rd_addr[AWIDTH-1:0] == wr_delay_1_clk )
+            data_shown[wr_delay_1_clk] <= 1'b0;
+        end
+  end
+
+
+always_ff @( posedge clk_i )
+  begin
+    if( valid_rd )
       begin
-        rd_addr_mem  = rd_addr[AWIDTH-1:0];
-        valid_rd_mem = valid_rd;
+        if ((wr_delay_1_clk == next_rdaddr[AWIDTH-1:0]) || (data_received[next_rdaddr[AWIDTH-1:0]] == 1'b1))
+          begin
+            if ( data_shown[next_rdaddr[AWIDTH-1:0]] == 1'b1 ) //Check if data has been writen to mem
+              data_received[next_rdaddr[AWIDTH-1:0]] <= 1'b0;
+          end          
       end
+
+      if( valid_wr )
+        data_received[wr_addr[AWIDTH-1:0]] <= 1'bx;
+
+      if ( wr_delay_2_clk != wr_delay_1_clk )
+        data_received[wr_delay_1_clk] <= 1'b1; 
+
+      if ( data_shown[wr_delay_1_clk] == 1'b1 )
+        begin
+          if ( rd_addr[AWIDTH-1:0] == wr_delay_1_clk )
+            data_received[wr_delay_1_clk] <= 1'b0;
+        end    
+  end
+
+always_ff @( posedge clk_i )
+  begin
+    if( valid_wr )
+      wr_delay_1_clk <= wr_addr[AWIDTH-1:0];
+  end
+
+always_ff @( posedge clk_i )
+  begin
+    wr_delay_2_clk <= wr_delay_1_clk; 
   end
 
 assign almost_empty_o = ( usedw_o < ALMOST_EMPTY_VALUE );
 assign almost_full_o  = ( usedw_o >= ALMOST_FULL_VALUE );
-assign empty_o        = ( wr_addr == rd_addr );
 assign full_o         = ( wr_addr[AWIDTH-1:0] == rd_addr[AWIDTH-1:0] ) &&
                         ( wr_addr[AWIDTH] != rd_addr[AWIDTH] );
+
 
 endmodule

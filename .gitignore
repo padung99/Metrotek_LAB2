@@ -13,3 +13,4 @@ scfifo_tmp
 *.rpt
 *.wlf
 *.bak
+fifo/quartus_prj/.qsys_edit/
