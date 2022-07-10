@@ -43,7 +43,7 @@ logic [AWIDTH:0]      rd_addr_mem2;
 logic                 valid_rd_mem1;
 logic                 valid_rd_mem2;
 
-logic              q_condition;
+logic                 q_condition;
 
 mem #(
   .DWIDTH_MEM ( DWIDTH ),
@@ -145,9 +145,9 @@ always_ff @( posedge clk_i )
   begin
     if( valid_rd_mem1 )
       q_condition <= 1'b1;
-    else
-      if( valid_rd_mem2 )
-        q_condition <= 1'b0;
+
+    if( valid_rd_mem2 )
+      q_condition <= 1'b0;
   end
 
 always_comb
@@ -164,7 +164,7 @@ always_ff @( posedge clk_i )
       begin
         if ((wr_delay_1_clk == next_rdaddr[AWIDTH-1:0]) || (data_received[next_rdaddr[AWIDTH-1:0]] == 1'b1))
           begin
-            if (data_shown[next_rdaddr[AWIDTH-1:0]] == 1'b1) //Check if data has been writen to mem
+            if ( data_shown[next_rdaddr[AWIDTH-1:0]] == 1'b1 ) //Check if data has been writen to mem
               data_shown[next_rdaddr[AWIDTH-1:0]] <= 1'b0;
           end          
       end

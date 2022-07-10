@@ -11,10 +11,10 @@ parameter REGISTER_OUTPUT_TOP    = "OFF";
 parameter WRITE_UNTIL_FULL       = 2**AWIDTH_TOP + 5;
 parameter MAX_DATA_RANDOM        = 100;
 
-parameter MANY_WRITE_QUERIES     = 100;
-parameter MANY_READ_QUERIES      = 100;
+parameter MANY_WRITE_REQUEST     = 100;
+parameter MANY_READ_REQUEST      = 100;
 
-parameter MAX_DATA_SEND          = WRITE_UNTIL_FULL + MANY_WRITE_QUERIES + MANY_READ_QUERIES;
+parameter MAX_DATA_SEND          = WRITE_UNTIL_FULL + MANY_WRITE_REQUEST + MANY_READ_REQUEST;
 parameter READ_UNTIL_EMPTY       = WRITE_UNTIL_FULL;
 
 logic                  srst_i_tb;
@@ -116,13 +116,13 @@ logic [DWIDTH_TOP-1:0] data_s;
       _full_wr.put( data_s );
     end
 
-  for( int i = 0; i < MANY_WRITE_QUERIES; i++ )
+  for( int i = 0; i < MANY_WRITE_REQUEST; i++ )
     begin
       data_s = $urandom_range( 2**DWIDTH_TOP-1,0 );
       _wr.put( data_s );
     end
 
-  for( int i = 0; i < MANY_READ_QUERIES; i++ )
+  for( int i = 0; i < MANY_READ_REQUEST; i++ )
     begin
       data_s = $urandom_range( 2**DWIDTH_TOP-1,0 );
       _rd.put( data_s );
@@ -164,7 +164,7 @@ for( int i = 0; i < READ_UNTIL_EMPTY; i++ )
   end
 endtask
 
-task wr_queries ( input int _lower_wr,
+task wr_REQUEST ( input int _lower_wr,
                         int _upper_wr, 
                   mailbox #( logic [DWIDTH_TOP-1:0] ) _wr,
                   mailbox #( logic [DWIDTH_TOP-1:0] ) _data_wr
@@ -239,42 +239,55 @@ bit usedw_error;
 bit almost_full_error;
 bit almost_empty_error;
 
+int cnt_q_error;
+int cnt_empty_error;
+int cnt_full_error;
+int cnt_usedw_error;
+int cnt_almost_full_error;
+int cnt_almost_empty_error;
+
   forever
     begin
       ##1;
       if( q_o_top != q_o_top2 )
         begin
           q_error = 1;
+          cnt_q_error++;
           $error("q mismatch");
         end
 
       if( almost_empty_o_top != almost_empty_o_top2 )
       begin
         almost_empty_error = 1;
+        cnt_almost_empty_error++;
         $error("almost_empty mismatch");
       end
 
       if( almost_full_o_top != almost_full_o_top2 )
         begin
           almost_full_error = 1;
+          cnt_almost_full_error++;
           $error("almost_full mismatch");
         end
 
       if( full_o_top != full_o_top2 )
         begin
           full_error = 1;
+          cnt_full_error++;
           $error("full mismatch");
         end
 
       if( empty_o_top != empty_o_top2 )
         begin
           empty_error = 1;
+          cnt_empty_error++;
           $error("empty mismatch");
         end
 
       if( usedw_o_top != usedw_o_top2 )
         begin
           usedw_error = 1;
+          cnt_usedw_error++;
           $error("usedw mismatch");
         end
 
@@ -282,9 +295,15 @@ bit almost_empty_error;
         break;
     end
   
+  $display("q error: %0d", cnt_q_error);
+  $display("almost_empty error: %0d", cnt_almost_empty_error);
+  $display("almost_full error: %0d", cnt_almost_full_error);
+  $display("full error: %0d", cnt_full_error);
+  $display("empty error: %0d", cnt_empty_error);
+  $display("usedw error: %0d", cnt_usedw_error);
   if( !q_error && !almost_empty_error && !almost_full_error && !full_error && !empty_error && !usedw_error )
     $display( "%s: Output match", task_name );
-    
+  $display("\n");
 
 endtask;
 
@@ -351,15 +370,17 @@ initial
     
     
     //Write to fifo until full
+    $display("###Write data until full###");
     gen_data( data_gen, full_data_wr, data_rd_qr, data_wr_qr );
     fork
       wr_until_full( full_data_wr, data_write );
       compare_ouput(WRITE_UNTIL_FULL, "Write data until full");
     join
-
+    
     cnt_wr_data = 0;
     
     //Read from fifo until empty
+    $display("###Read data from fifo until empty###");
     fork
       rd_until_empty( data_read );
       compare_ouput( READ_UNTIL_EMPTY, "Read data from fifo until empty" );
@@ -367,20 +388,22 @@ initial
 
     cnt_wr_data = 0;
     
-    //Write queries more than read queries
+    //Write REQUEST more than read REQUEST
+    $display("###Write REQUEST more than read REQUEST###");
     fork
-      wr_queries( 4,6, data_wr_qr, data_write );
-      rd_fifo( MANY_WRITE_QUERIES, 1,2, data_read );
-      compare_ouput( MANY_WRITE_QUERIES, "Write queries more than read queries" );
+      wr_REQUEST( 4,6, data_wr_qr, data_write );
+      rd_fifo( MANY_WRITE_REQUEST, 1,2, data_read );
+      compare_ouput( MANY_WRITE_REQUEST, "Write REQUEST more than read REQUEST" );
     join
   
     cnt_wr_data = 0;
 
-    //Read queries more than write queries
+    //Read REQUEST more than write REQUEST
+    $display("###Read REQUEST more than write REQUEST###");
     fork
-      wr_queries( 1,2, data_rd_qr, data_write );
-      rd_fifo( MANY_READ_QUERIES, 4,6, data_read );
-      compare_ouput( MANY_READ_QUERIES, "Read queries more than write queries" );
+      wr_REQUEST( 1,2, data_rd_qr, data_write );
+      rd_fifo( MANY_READ_REQUEST, 4,6, data_read );
+      compare_ouput( MANY_READ_REQUEST, "Read REQUEST more than write REQUEST" );
     join
     
     $display("###Start testing write data and read data");

@@ -3,7 +3,11 @@ module Sorting_tb;
 parameter DWIDTH_TB = 16;
 parameter MAX_PKT_LEN_TB = 16;
 
-bit              clk_i_tb;
+parameter MAX_DATA_SEND = MAX_PKT_LEN_TB+5;
+
+localparam AWIDTH_TB = $clog2(MAX_PKT_LEN_TB) + 1;
+
+bit                clk_i_tb;
 logic              srst_i_tb;
 
 logic [DWIDTH_TB-1:0] snk_data_i_tb;
@@ -45,33 +49,96 @@ Sorting #(
   .src_ready_i ( src_ready_i_tb )
 );
 
+mailbox #( logic [DWIDTH_TB-1:0] ) data_gen = new();
+
+task gen_package( mailbox #( logic [DWIDTH_TB-1:0] ) _data_gen );
+
+logic [DWIDTH_TB-1:0] data_new;
+
+for( int i = 0; i < MAX_DATA_SEND; i++ )
+  begin
+    data_new = $urandom_range( 2**DWIDTH_TB-1,0 );
+    _data_gen.put( data_new );
+  end
+endtask;
+
+task send_package ( mailbox #( logic [DWIDTH_TB-1:0] ) _data_gen );
+
+logic [DWIDTH_TB-1:0] data_new;
+int distance_start_end;
+int cnt_data_received;
+
+distance_start_end = $urandom_range( MAX_PKT_LEN_TB-3, 2 );
+
+while( ( cnt_data_received != distance_start_end ) && ( snk_ready_o_tb ) )
+  begin
+    _data_gen.get( data_new );
+    snk_data_i_tb = data_new;
+    
+    if( cnt_data_received == 0 )
+      begin
+        snk_startofpacket_i_tb = 1'b1;
+        snk_valid_i_tb = 1'b1;
+        ##1;
+        snk_startofpacket_i_tb = 1'b0;
+        cnt_data_received++;
+      end
+    else if( cnt_data_received < distance_start_end )
+      begin
+        snk_valid_i_tb = $urandom_range( 1,0 );
+        if( snk_valid_i_tb )
+          cnt_data_received++;
+        ##1;
+      end
+  end
+  if( cnt_data_received == distance_start_end )
+      begin
+        snk_endofpacket_i_tb = 1'b1;
+        ##1;
+        snk_endofpacket_i_tb = 1'b0;
+      end
+
+endtask
+
 initial 
   begin
+    src_ready_i_tb <= 1'b1;
     snk_data_i_tb <= 16'h0;
     srst_i_tb <= 1;
     ##1;
     srst_i_tb <= 0;
     
-    ##1;
-    snk_data_i_tb <= 16'h16;
-    snk_startofpacket_i_tb <= 1;
-    snk_valid_i_tb <= 1;
+    gen_package( data_gen );
+    send_package( data_gen );
 
-    ##1;
-    snk_data_i_tb <= 16'h15;
-    snk_startofpacket_i_tb <= 0;
+    // ##1;
+    // snk_data_i_tb <= 16'h16;
+    // snk_startofpacket_i_tb <= 1;
+    // snk_valid_i_tb <= 1;
 
-    ##1;
-    snk_data_i_tb <= 16'h13;
+    // ##1;
+    // snk_data_i_tb <= 16'h15;
+    // snk_startofpacket_i_tb <= 0;
 
-    ##1;
-    snk_data_i_tb <= 16'h02;
-    snk_endofpacket_i_tb <= 1;
-
-    ##1;
-    snk_endofpacket_i_tb <= 0;
-    snk_valid_i_tb <= 0;
+    // ##1;
+    // snk_data_i_tb <= 16'h13;
     
+    // ##1;
+    // snk_data_i_tb <= 16'h02;
+    // snk_endofpacket_i_tb <= 1;
+
+    // ##1;
+    // snk_endofpacket_i_tb <= 0;
+    // snk_valid_i_tb <= 0;
+    
+    // // ##5;
+    // // src_ready_i_tb <= 1'b1;
+
+    // // ##2;
+    // // src_ready_i_tb <= 1'b0;
+    
+    // // ##3;
+    // // src_ready_i_tb <= 1'b1;
     ##20;
     $stop();
 
