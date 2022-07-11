@@ -61,7 +61,7 @@ always_ff @( posedge clk_i )
 
 always_ff @( posedge clk_i )
   begin
-    if( start_sending_out == 1'b1 && rd_addr != word_received &&  src_ready_i )
+    if( start_sending_out == 1'b1 &&  src_ready_i )
       rd_addr <= rd_addr + 1;
   end
 
@@ -94,7 +94,8 @@ always_ff @( posedge clk_i )
   begin
     if( sending == 1'b0 )
       start_sending_out <= 1'b1;
-    if( snk_valid_i && snk_startofpacket_i )
+    if( rd_addr > word_received )
+    // if( snk_valid_i && snk_startofpacket_i )
       start_sending_out <= 1'b0;  
   end
 
@@ -157,17 +158,33 @@ always_ff @( posedge clk_i )
             src_endofpacket_o <= 1'b1;
             // delay_valid_output <= 1'b1;
           end
-        src_data_o <= sort_mem[rd_addr];
+        if( rd_addr <= word_received )
+          src_data_o <= sort_mem[rd_addr];
         src_valid_o <= 1'b1;
       end
   end 
 
 always_ff @( posedge clk_i )
   begin
+    if( rd_addr > word_received  )
+      src_endofpacket_o <= 1'b0;
+  end
+
+always_ff @( posedge clk_i )
+  begin
+    if( rd_addr > word_received )
+      begin
+        // src_endofpacket_o <= 1'b0;
+        src_valid_o <= 1'b0;
+      end
+  end
+
+always_ff @( posedge clk_i )
+  begin
     if( delay_valid_output )
       begin
-        src_valid_o <= 1'b0;
-        src_endofpacket_o <= 1'b0;
+        // src_valid_o <= 1'b0;
+        // src_endofpacket_o <= 1'b0;
       end
   end
 
