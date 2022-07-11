@@ -103,16 +103,6 @@ while( ( cnt_data_received != distance_start_end ) )
   cnt_data_received = 0;
 endtask
 
-// task send_random_package ( input int package_num,
-//                     mailbox #( logic [DWIDTH_TB-1:0] ) _data_gen
-//                   );
-//   for( int i = 0; i < package_num; i++ )
-//     begin
-//       _data_gen = new();
-//       gen_package( _data_gen );
-//       send_package( _data_gen );
-//     end
-// endtask
 
 initial 
   begin
@@ -136,6 +126,7 @@ initial
 
       gen_package( data_gen3 );
       send_package( data_gen3 );
+
     // gen_package( data_gen );
     // send_data( data_gen );
 

@@ -55,6 +55,7 @@ always_ff @( posedge clk_i )
             wr_addr <= (AWIDTH)'(0);
             word_received <= wr_addr;
           end
+        
       end
   end 
 
@@ -70,7 +71,7 @@ always_ff @( posedge clk_i )
       begin
         sending <= 1'b1;
         // delay_sending <= 1'b0;
-        delay_valid_output <= 1'b0;
+        // delay_valid_output <= 1'b0;
       end
     else if( snk_valid_i && snk_endofpacket_i )
       sending <= 1'b0;
@@ -101,8 +102,10 @@ always_ff @( posedge clk_i )
   begin
     if( ( start_sending_out == 1'b1 ) )
       begin
-        if( rd_addr == word_received )
-          delay_valid_output <= 1'b1;
+        if( rd_addr == word_received && src_endofpacket_o != 1'b1 )
+          delay_valid_output <= 1'b1; /////////////////
+        else if( src_endofpacket_o == 1'b1 )
+          delay_valid_output <= 1'b0;
       end
     if( snk_valid_i && snk_startofpacket_i )
       start_sending_out <= 1'b0;
