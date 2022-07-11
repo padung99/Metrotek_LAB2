@@ -70,7 +70,7 @@ int cnt_data_received;
 
 distance_start_end = $urandom_range( MAX_PKT_LEN_TB-3, 2 );
 
-while( ( cnt_data_received != distance_start_end ) && ( snk_ready_o_tb ) )
+while( ( cnt_data_received != distance_start_end ) )
   begin
     _data_gen.get( data_new );
     snk_data_i_tb = data_new;
@@ -95,6 +95,7 @@ while( ( cnt_data_received != distance_start_end ) && ( snk_ready_o_tb ) )
       begin
         snk_endofpacket_i_tb = 1'b1;
         ##1;
+        snk_valid_i_tb = 1'b0;
         snk_endofpacket_i_tb = 1'b0;
       end
 
@@ -103,7 +104,7 @@ endtask
 initial 
   begin
     src_ready_i_tb <= 1'b1;
-    snk_data_i_tb <= 16'h0;
+
     srst_i_tb <= 1;
     ##1;
     srst_i_tb <= 0;
@@ -111,6 +112,7 @@ initial
     gen_package( data_gen );
     send_package( data_gen );
 
+    // snk_data_i_tb <= 16'h0;
     // ##1;
     // snk_data_i_tb <= 16'h16;
     // snk_startofpacket_i_tb <= 1;
@@ -119,6 +121,39 @@ initial
     // ##1;
     // snk_data_i_tb <= 16'h15;
     // snk_startofpacket_i_tb <= 0;
+
+    // ##1;
+    // snk_data_i_tb <= 16'h17;
+
+    // ##1;
+    // snk_data_i_tb <= 16'h20;
+
+    // ##1;
+    // snk_data_i_tb <= 16'h18;
+
+    // ##1;
+    // snk_data_i_tb <= 16'h23;
+
+    // ##1;
+    // snk_data_i_tb <= 16'h19;
+
+    // ##1;
+    // snk_data_i_tb <= 16'h22;
+
+    // ##1;
+    // snk_data_i_tb <= 16'h30;
+
+    // ##1;
+    // snk_data_i_tb <= 16'h14;
+
+    // ##1;
+    // snk_data_i_tb <= 16'h33;
+
+    // ##1;
+    // snk_data_i_tb <= 16'h41;
+
+    // ##1;
+    // snk_data_i_tb <= 16'h05;
 
     // ##1;
     // snk_data_i_tb <= 16'h13;
