@@ -1,6 +1,6 @@
 module fifo #(
   parameter DWIDTH             = 16,
-  parameter AWIDTH             = 4,
+  parameter AWIDTH             = 8,
   parameter SHOWAHEAD          = "ON",
   parameter ALMOST_FULL_VALUE  = 2**AWIDTH-3,
   parameter ALMOST_EMPTY_VALUE = 3,
