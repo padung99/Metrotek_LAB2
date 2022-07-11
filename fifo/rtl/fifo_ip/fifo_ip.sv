@@ -27,19 +27,20 @@ logic [AWIDTH:0]   next_rdaddr;
 logic [AWIDTH:0]   next_wraddr;
 
 //(* ramstyle = "M10K" *) logic [DWIDTH-1:0] mem [2**AWIDTH-1:0];//Inferring mem to block RAM type M10K
-logic [2**AWIDTH-1:0] data_received;
-logic [2**AWIDTH-1:0] data_shown;
 
 logic                 valid_rd;
 logic                 valid_wr;
 
 logic [AWIDTH-1:0]    wr_delay_1_clk;
-logic [AWIDTH-1:0]    wr_delay_2_clk;
 
 logic [AWIDTH:0]      rd_addr_mem1;
+logic [AWIDTH:0]      rd_addr_mem2;
 
 logic                 valid_rd_mem1;
-
+logic                 valid_rd_mem2;
+logic                 q_condition;
+logic [DWIDTH-1:0]    q_tmp1;
+logic [DWIDTH-1:0]    q_tmp2;
 
 mem #(
   .DWIDTH_MEM ( DWIDTH ),
@@ -51,7 +52,20 @@ mem #(
   .rden      ( valid_rd_mem1            ), 
   .wraddress ( wr_addr[AWIDTH-1:0]      ),
   .wren      ( valid_wr                 ),
-  .q         ( q_o                   )
+  .q         ( q_tmp1                   )
+);
+
+mem #(
+  .DWIDTH_MEM ( DWIDTH ),
+  .AWIDTH_MEM ( AWIDTH )
+) mem_inst2 (
+  .clock     ( clk_i                    ),
+  .data      ( data_i                   ),
+  .rdaddress ( rd_addr_mem2[AWIDTH-1:0] ), 
+  .rden      ( valid_rd_mem2            ), 
+  .wraddress ( wr_addr[AWIDTH-1:0]      ),
+  .wren      ( valid_wr                 ),
+  .q         ( q_tmp2                   )
 );
 
 
@@ -100,93 +114,43 @@ always_ff @( posedge clk_i )
             if( usedw_o == 1 )
               empty_o <= 1'b1;
             else
-              begin
-                if ( data_shown[wr_delay_1_clk] == 1'b0 )
-                  empty_o <= 1'b0;
-              end
+              empty_o <= 1'b0;
           end
         else
           begin
-            if( data_shown[wr_delay_1_clk] == 1'b1 )
-              begin
-                if( rd_addr[AWIDTH-1:0] == wr_delay_1_clk )
-                  empty_o <= 0;
-              end
+            if( rd_addr[AWIDTH-1:0] == wr_delay_1_clk )
+              empty_o <= 0;
           end
       end
   end
 
+assign valid_rd_mem1 = ( valid_rd );
+assign rd_addr_mem1  = next_rdaddr[AWIDTH-1:0];
 
+assign valid_rd_mem2 = ( rd_addr[AWIDTH-1:0] == wr_delay_1_clk );
+assign rd_addr_mem2  = wr_delay_1_clk;
+
+always_ff @( posedge clk_i )
+  begin
+    if( valid_rd_mem1 )
+      q_condition <= 1'b1;
+    if( valid_rd_mem2 )
+      q_condition <= 1'b0;
+  end
+ 
 always_comb
   begin
-    if( valid_rd )
-      begin
-        valid_rd_mem1 = ( data_shown[next_rdaddr[AWIDTH-1:0]] == 1'b1 ) && ( (wr_delay_1_clk == next_rdaddr[AWIDTH-1:0]) || (data_received[next_rdaddr[AWIDTH-1:0]] == 1'b1) );
-        rd_addr_mem1  = next_rdaddr[AWIDTH-1:0];
-      end
-    else
-      begin
-        valid_rd_mem1 = ( data_shown[wr_delay_1_clk] == 1'b1 ) && ( rd_addr[AWIDTH-1:0] == wr_delay_1_clk );
-        rd_addr_mem1  = wr_delay_1_clk;
-      end
+    case( q_condition )
+      1'b1: q_o = q_tmp1;
+      1'b0: q_o = q_tmp2;
+    endcase
   end
 
-
-always_ff @( posedge clk_i )
-  begin
-    if( valid_rd )
-      begin
-        if ((wr_delay_1_clk == next_rdaddr[AWIDTH-1:0]) || (data_received[next_rdaddr[AWIDTH-1:0]] == 1'b1))
-          begin
-            if ( data_shown[next_rdaddr[AWIDTH-1:0]] == 1'b1 ) //Check if data has been written to mem
-              data_shown[next_rdaddr[AWIDTH-1:0]] <= 1'b0; ///
-          end          
-      end
-
-      if( valid_wr )
-        data_shown[wr_addr[AWIDTH-1:0]] <= 1'b1;
-
-      if( data_shown[wr_delay_1_clk] == 1'b1 )
-        begin
-          if( rd_addr[AWIDTH-1:0] == wr_delay_1_clk )
-            data_shown[wr_delay_1_clk] <= 1'b0; ////
-        end
-  end
-
-
-always_ff @( posedge clk_i )
-  begin
-    if( valid_rd )
-      begin
-        if ((wr_delay_1_clk == next_rdaddr[AWIDTH-1:0]) || (data_received[next_rdaddr[AWIDTH-1:0]] == 1'b1))
-          begin
-            if ( data_shown[next_rdaddr[AWIDTH-1:0]] == 1'b1 ) //Check if data has been written to mem
-              data_received[next_rdaddr[AWIDTH-1:0]] <= 1'b0;
-          end          
-      end
-
-      if( valid_wr )
-        data_received[wr_addr[AWIDTH-1:0]] <= 1'bx;
-
-      if ( wr_delay_2_clk != wr_delay_1_clk )
-        data_received[wr_delay_1_clk] <= 1'b1; 
-
-      if ( data_shown[wr_delay_1_clk] == 1'b1 )
-        begin
-          if ( rd_addr[AWIDTH-1:0] == wr_delay_1_clk )
-            data_received[wr_delay_1_clk] <= 1'b0;
-        end    
-  end
 
 always_ff @( posedge clk_i )
   begin
     if( valid_wr )
       wr_delay_1_clk <= wr_addr[AWIDTH-1:0];
-  end
-
-always_ff @( posedge clk_i )
-  begin
-    wr_delay_2_clk <= wr_delay_1_clk; 
   end
 
 assign almost_empty_o = ( usedw_o < ALMOST_EMPTY_VALUE );
