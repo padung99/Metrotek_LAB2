@@ -146,7 +146,6 @@ always_comb
     endcase
   end
 
-
 always_ff @( posedge clk_i )
   begin
     if( valid_wr )

@@ -75,7 +75,7 @@ scfifo #(
   .lpm_showahead           ( SHOWAHEAD_TOP           ),
   .lpm_type                ( "scfifo"                ),
   .lpm_width               ( DWIDTH_TOP              ),
-  .lpm_widthu              ( AWIDTH_TOP              ),
+  .lpm_widthu              ( AWIDTH_TOP + 1          ),
   .overflow_checking       ( "ON"                    ),
   .underflow_checking      ( "ON"                    ),
   .use_eab                 ( "ON"                    )
