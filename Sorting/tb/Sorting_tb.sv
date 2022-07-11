@@ -50,6 +50,8 @@ Sorting #(
 );
 
 mailbox #( logic [DWIDTH_TB-1:0] ) data_gen = new();
+mailbox #( logic [DWIDTH_TB-1:0] ) data_gen2 = new();
+mailbox #( logic [DWIDTH_TB-1:0] ) data_gen3 = new();
 
 task gen_package( mailbox #( logic [DWIDTH_TB-1:0] ) _data_gen );
 
@@ -98,8 +100,19 @@ while( ( cnt_data_received != distance_start_end ) )
         snk_valid_i_tb = 1'b0;
         snk_endofpacket_i_tb = 1'b0;
       end
-
+  cnt_data_received = 0;
 endtask
+
+// task send_random_package ( input int package_num,
+//                     mailbox #( logic [DWIDTH_TB-1:0] ) _data_gen
+//                   );
+//   for( int i = 0; i < package_num; i++ )
+//     begin
+//       _data_gen = new();
+//       gen_package( _data_gen );
+//       send_package( _data_gen );
+//     end
+// endtask
 
 initial 
   begin
@@ -109,8 +122,22 @@ initial
     ##1;
     srst_i_tb <= 0;
     
-    gen_package( data_gen );
-    send_package( data_gen );
+    // send_random_package( 3, data_gen );
+
+      gen_package( data_gen );
+      send_package( data_gen );
+      ##20;
+
+ 
+      gen_package( data_gen2 );
+      send_package( data_gen2 );
+      ##20;
+      
+
+      gen_package( data_gen3 );
+      send_package( data_gen3 );
+    // gen_package( data_gen );
+    // send_data( data_gen );
 
     // snk_data_i_tb <= 16'h0;
     // ##1;

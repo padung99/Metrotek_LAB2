@@ -24,7 +24,7 @@ logic [AWIDTH-1:0] wr_addr;
 logic [AWIDTH-1:0] rd_addr;
 
 logic              sending;
-logic              delay_sending;
+// logic              delay_sending;
 
 logic              start_sending_out;
 
@@ -69,18 +69,19 @@ always_ff @( posedge clk_i )
     if( snk_valid_i && snk_startofpacket_i )
       begin
         sending <= 1'b1;
-        delay_sending <= 1'b0;
+        // delay_sending <= 1'b0;
         delay_valid_output <= 1'b0;
       end
     else if( snk_valid_i && snk_endofpacket_i )
-      delay_sending <= 1'b1;    
+      sending <= 1'b0;
+      // delay_sending <= 1'b1;    
   end
 
-always_ff @( posedge clk_i )
-  begin
-    if( delay_sending )
-      sending <= 1'b0;
-  end
+// always_ff @( posedge clk_i )
+//   begin
+//     if( delay_sending )
+//       sending <= 1'b0;
+//   end
 
 
 always_ff @( posedge clk_i )
