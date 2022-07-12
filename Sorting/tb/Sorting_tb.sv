@@ -1,11 +1,11 @@
 module Sorting_tb;
 
 parameter DWIDTH_TB = 16;
-parameter MAX_PKT_LEN_TB = 16;
+parameter MAX_PKT_LEN_TB = 13;
 
 parameter MAX_DATA_SEND = MAX_PKT_LEN_TB+5;
 
-localparam AWIDTH_TB = $clog2(MAX_PKT_LEN_TB) + 1;
+// localparam AWIDTH_TB = $clog2(MAX_PKT_LEN_TB) + 1;
 
 bit                clk_i_tb;
 logic              srst_i_tb;
@@ -49,7 +49,7 @@ Sorting #(
   .src_ready_i ( src_ready_i_tb )
 );
 
-mailbox #( logic [DWIDTH_TB-1:0] ) data_gen = new();
+mailbox #( logic [DWIDTH_TB-1:0] ) data_gen  = new();
 mailbox #( logic [DWIDTH_TB-1:0] ) data_gen2 = new();
 mailbox #( logic [DWIDTH_TB-1:0] ) data_gen3 = new();
 
@@ -70,7 +70,7 @@ logic [DWIDTH_TB-1:0] data_new;
 int distance_start_end;
 int cnt_data_received;
 
-distance_start_end = $urandom_range( MAX_PKT_LEN_TB-3, 2 );
+distance_start_end = $urandom_range( MAX_DATA_SEND-3, 2 );
 
 while( ( cnt_data_received != distance_start_end ) )
   begin
@@ -116,12 +116,12 @@ initial
 
       gen_package( data_gen );
       send_package( data_gen );
-      ##20;
+      ##(MAX_DATA_SEND);
 
  
       gen_package( data_gen2 );
       send_package( data_gen2 );
-      ##20;
+      ##(MAX_DATA_SEND);
       
 
       gen_package( data_gen3 );
@@ -192,7 +192,7 @@ initial
     
     // // ##3;
     // // src_ready_i_tb <= 1'b1;
-    ##20;
+    ##(MAX_DATA_SEND);
     $stop();
 
   end
