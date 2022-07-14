@@ -17,3 +17,5 @@ scfifo_tmp
 wave.do
 fifo/quartus_prj/.qsys_edit/
 *.vstf
+*.qip
+*.cnx

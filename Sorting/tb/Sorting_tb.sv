@@ -1,3 +1,4 @@
+`timescale 1 ps / 1 ps
 module Sorting_tb;
 
 parameter DWIDTH_TB = 16;
@@ -116,19 +117,19 @@ initial
 
       gen_package( data_gen );
       send_package( data_gen );
-      ##(MAX_DATA_SEND);
+      ##(2*MAX_DATA_SEND);
 
  
       gen_package( data_gen2 );
       send_package( data_gen2 );
-      ##(MAX_DATA_SEND);
+      ##(2*MAX_DATA_SEND);
       
 
       gen_package( data_gen3 );
       send_package( data_gen3 );
 
     // gen_package( data_gen );
-    // send_data( data_gen );
+    // send_package( data_gen );
 
     // snk_data_i_tb <= 16'h0;
     // ##1;
@@ -145,7 +146,10 @@ initial
 
     // ##1;
     // snk_data_i_tb <= 16'h20;
-
+    // snk_endofpacket_i_tb <= 1;
+    // ##1;
+    // snk_endofpacket_i_tb <= 0;
+    // snk_valid_i_tb <= 0;
     // ##1;
     // snk_data_i_tb <= 16'h18;
 
@@ -184,15 +188,16 @@ initial
     // snk_endofpacket_i_tb <= 0;
     // snk_valid_i_tb <= 0;
     
-    // // ##5;
-    // // src_ready_i_tb <= 1'b1;
+    // ##5;
+    // src_ready_i_tb <= 1'b1;
 
-    // // ##2;
-    // // src_ready_i_tb <= 1'b0;
+    // ##2;
+    // src_ready_i_tb <= 1'b0;
     
-    // // ##3;
-    // // src_ready_i_tb <= 1'b1;
-    ##(MAX_DATA_SEND);
+    // ##3;
+    // src_ready_i_tb <= 1'b1;
+    // ##(MAX_DATA_SEND*MAX_DATA_SEND);
+    ##(2*MAX_DATA_SEND);
     $stop();
 
   end
