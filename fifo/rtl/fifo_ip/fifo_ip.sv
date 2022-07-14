@@ -34,13 +34,10 @@ logic                 valid_wr;
 logic [AWIDTH-1:0]    wr_delay_1_clk;
 
 logic [AWIDTH:0]      rd_addr_mem1;
-logic [AWIDTH:0]      rd_addr_mem2;
 
+logic                 valid_rd_mem;
 logic                 valid_rd_mem1;
 logic                 valid_rd_mem2;
-logic                 q_condition;
-logic [DWIDTH-1:0]    q_tmp1;
-logic [DWIDTH-1:0]    q_tmp2;
 
 mem #(
   .DWIDTH_MEM ( DWIDTH ),
@@ -49,25 +46,11 @@ mem #(
   .clock     ( clk_i                    ),
   .data      ( data_i                   ),
   .rdaddress ( rd_addr_mem1[AWIDTH-1:0] ), 
-  .rden      ( valid_rd_mem1            ), 
+  .rden      ( valid_rd_mem             ), 
   .wraddress ( wr_addr[AWIDTH-1:0]      ),
   .wren      ( valid_wr                 ),
-  .q         ( q_tmp1                   )
+  .q         ( q_o                      )
 );
-
-mem #(
-  .DWIDTH_MEM ( DWIDTH ),
-  .AWIDTH_MEM ( AWIDTH )
-) mem_inst2 (
-  .clock     ( clk_i                    ),
-  .data      ( data_i                   ),
-  .rdaddress ( rd_addr_mem2[AWIDTH-1:0] ), 
-  .rden      ( valid_rd_mem2            ), 
-  .wraddress ( wr_addr[AWIDTH-1:0]      ),
-  .wren      ( valid_wr                 ),
-  .q         ( q_tmp2                   )
-);
-
 
 always_ff @( posedge clk_i )
   begin
@@ -125,25 +108,21 @@ always_ff @( posedge clk_i )
   end
 
 assign valid_rd_mem1 = ( valid_rd );
-assign rd_addr_mem1  = next_rdaddr[AWIDTH-1:0];
 
 assign valid_rd_mem2 = ( rd_addr[AWIDTH-1:0] == wr_delay_1_clk );
-assign rd_addr_mem2  = wr_delay_1_clk;
 
-always_ff @( posedge clk_i )
-  begin
-    if( valid_rd_mem1 )
-      q_condition <= 1'b1;
-    if( valid_rd_mem2 )
-      q_condition <= 1'b0;
-  end
- 
 always_comb
   begin
-    case( q_condition )
-      1'b1: q_o = q_tmp1;
-      1'b0: q_o = q_tmp2;
-    endcase
+    if( !valid_rd_mem1 && valid_rd_mem2 || (valid_rd_mem1 && valid_rd_mem2) )
+      begin
+        rd_addr_mem1  = wr_delay_1_clk;
+        valid_rd_mem  = valid_rd_mem2;
+      end
+    else
+      begin
+        rd_addr_mem1  = next_rdaddr[AWIDTH-1:0];
+        valid_rd_mem  = valid_rd_mem1;
+      end
   end
 
 always_ff @( posedge clk_i )

@@ -36,7 +36,7 @@
 // synopsys translate_off
 `timescale 1 ps / 1 ps
 // synopsys translate_on
-module mem #(
+module mem #( 
   parameter DWIDTH_MEM = 16,
   parameter AWIDTH_MEM = 8
 ) (
@@ -87,7 +87,7 @@ module mem #(
 				.clocken1 (1'b1),
 				.clocken2 (1'b1),
 				.clocken3 (1'b1),
-				.data_b ({16{1'b1}}),
+				.data_b ({(DWIDTH_MEM){1'b1}}),
 				.eccstatus (),
 				.q_a (),
 				.rden_a (1'b1),
@@ -162,7 +162,7 @@ endmodule
 // Retrieval info: PRIVATE: READ_DURING_WRITE_MODE_PORT_A NUMERIC "3"
 // Retrieval info: PRIVATE: READ_DURING_WRITE_MODE_PORT_B NUMERIC "3"
 // Retrieval info: PRIVATE: REGdata NUMERIC "1"
-// Retrieval info: PRIVATE: REGq NUMERIC "1"
+// Retrieval info: PRIVATE: REGq NUMERIC "0"
 // Retrieval info: PRIVATE: REGrdaddress NUMERIC "1"
 // Retrieval info: PRIVATE: REGrren NUMERIC "1"
 // Retrieval info: PRIVATE: REGwraddress NUMERIC "1"

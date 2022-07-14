@@ -117,12 +117,12 @@ initial
 
       gen_package( data_gen );
       send_package( data_gen );
-      ##(2*MAX_DATA_SEND);
+      ##(MAX_DATA_SEND*MAX_DATA_SEND);
 
  
       gen_package( data_gen2 );
       send_package( data_gen2 );
-      ##(2*MAX_DATA_SEND);
+      ##(MAX_DATA_SEND*MAX_DATA_SEND);
       
 
       gen_package( data_gen3 );
@@ -197,7 +197,7 @@ initial
     // ##3;
     // src_ready_i_tb <= 1'b1;
     // ##(MAX_DATA_SEND*MAX_DATA_SEND);
-    ##(2*MAX_DATA_SEND);
+    ##(MAX_DATA_SEND*MAX_DATA_SEND);
     $stop();
 
   end
