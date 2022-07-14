@@ -27,8 +27,6 @@ logic [AWIDTH:0]   next_rdaddr;
 logic [AWIDTH:0]   next_wraddr;
 
 (* ramstyle = "M10K" *) logic [DWIDTH-1:0] mem [2**AWIDTH-1:0];//Inferring mem to block RAM type M10K
-logic [2**AWIDTH-1:0] data_received;
-logic [2**AWIDTH-1:0] data_shown;
 
 logic              valid_rd;
 logic              valid_wr;
