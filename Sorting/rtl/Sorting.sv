@@ -24,14 +24,13 @@ logic [AWIDTH-1:0] wr_addr;
 logic [AWIDTH-1:0] rd_addr;
 
 logic              sending;
-// logic              delay_sending;
 
 logic              start_sending_out;
 
 integer word_received;
-integer first_loop_ind;
-logic [DWIDTH-1:0] tmp;
-// logic              delay_valid_output;
+// integer first_loop_ind;
+// logic [DWIDTH-1:0] tmp;
+
 logic [DWIDTH-1:0] sort_mem [MAX_PKT_LEN+2:0];
 
 integer index;
@@ -42,9 +41,6 @@ always_ff @( posedge clk_i )
     if( srst_i )
       begin
         wr_addr       <= '0;
-        // index <= 0;
-        // cnt <= 0;
-        // snk_ready_o <= 1'b1;
       end
     else
       begin
@@ -53,13 +49,11 @@ always_ff @( posedge clk_i )
         if( snk_valid_i && snk_startofpacket_i )
           begin
             wr_addr <= (AWIDTH)'(1);
-            // rd_addr <= (AWIDTH)'(0);
           end
         if( snk_valid_i && snk_endofpacket_i )
           begin
             wr_addr <= (AWIDTH)'(0);
             word_received <= wr_addr;
-            // first_loop_ind <= wr_addr;
           end
         
       end
@@ -73,7 +67,6 @@ always_ff @( posedge clk_i )
     if( snk_valid_i && snk_startofpacket_i )
       begin
         rd_addr <= (AWIDTH)'(0);
-        // cnt <= 0;
       end
   end
 
@@ -88,79 +81,23 @@ always_ff @( posedge clk_i )
   
   end
 
-// always_ff @( posedge clk_i )
-//   begin
-//     if( snk_valid_i && ( wr_addr < MAX_PKT_LEN-1 ) )
-//       sort_mem[wr_addr] <= snk_data_i;
-//   end
-
 always_ff @( posedge clk_i )
   begin
-    // if( sending == 1'b0 )
-    //   start_sending_out <= 1'b1;
-    if( rd_addr > word_received )
+    if( srst_i )
       start_sending_out <= 1'b0;
-    if( snk_valid_i && snk_startofpacket_i )
-      start_sending_out <= 1'b0;
-    if( src_endofpacket_o )
-      start_sending_out <= 1'b0;
-    if( cnt == MAX_PKT_LEN )
-      start_sending_out <= 1'b1;
+    else
+      begin
+        if( rd_addr > word_received )
+          start_sending_out <= 1'b0;
+        // if( snk_valid_i && snk_startofpacket_i )
+        //   start_sending_out <= 1'b0;
+        // if( src_endofpacket_o )
+        //   start_sending_out <= 1'b0;
+        if( cnt == MAX_PKT_LEN )
+          start_sending_out <= 1'b1;
+      end
   end
 
-// always_ff @( posedge clk_i )
-//   begin
-//     if( snk_valid_i && snk_startofpacket_i )
-//       start_sending_out <= 1'b0;
-//   end
-
-//Sorting 
-// always_ff @( posedge clk_i )
-//   begin
-//     if( sending == 1'b0 )
-//       begin
-//         //bubble sort
-//         for( int i = 0;  i <= MAX_PKT_LEN; i++ )
-//           begin
-//             for( int j = 0; j < MAX_PKT_LEN - i; j++ ) ///
-//               begin
-//                 if( sort_mem[j] > sort_mem[j+1] )
-//                   begin
-//                     // tmp           = sort_mem[j];
-//                     sort_mem[j]   <= sort_mem[j+1];
-//                     sort_mem[j+1] <= sort_mem[j];
-//                   end
-//               end
-//           end
-//       end
-    
-//   end
-
-// always_ff @( posedge clk_i )
-//   begin
-//     if( first_loop_ind > 0 )
-//       begin
-//         if( index < word_received )
-//           begin
-//             if( sort_mem[index] > sort_mem[index+1] )
-//               begin
-//                 sort_mem[index]   <= sort_mem[index+1];
-//                 sort_mem[index+1] <= sort_mem[index];
-//               end
-//             index <= index + 1;
-//           end
-//         else
-//           begin
-//             first_loop_ind <= first_loop_ind - 1;
-//             index <= 0;
-//           end
-//       end
-//     else if( first_loop_ind == 0 && src_endofpacket_o != 1'b1 )
-//       begin
-//         start_sending_out <= 1'b1;
-//         // rd_addr <= 0;
-//       end
-//   end
 
 always_ff @( posedge clk_i )
   begin
@@ -193,8 +130,6 @@ always_ff @( posedge clk_i )
                 cnt <= cnt + 1;
               end
           end
-        // else if( snk_valid_i && snk_startofpacket_i )
-        //   cnt <= 0;
       end
 
     if( snk_valid_i && ( wr_addr < MAX_PKT_LEN-1 ) )
@@ -205,25 +140,7 @@ always_ff @( posedge clk_i )
         if( rd_addr <= word_received )
           src_data_o <= sort_mem[rd_addr];
       end
-
-    // if( srst_i || snk_valid_i && snk_startofpacket_i )
-    //   cnt <= 0;
-      
-    // if( snk_valid_i && snk_startofpacket_i )
-    //   begin
-    //     // rd_addr <= (AWIDTH)'(0);
-    //     cnt <= 0;
-    //   end
-
   end
-
-// always_ff @( posedge clk_i )
-//   begin
-//     if( cnt == word_received )
-//       begin
-//         start_sending_out <= 1'b1;
-//       end
-//   end 
 
 always_ff @( posedge clk_i )
   begin
@@ -253,15 +170,6 @@ always_ff @( posedge clk_i )
         end
   end 
 
-// always_ff @( posedge clk_i )
-//   begin
-//     if( start_sending_out == 1'b1 )
-//       begin
-//         if( rd_addr <= word_received )
-//           src_data_o <= sort_mem[rd_addr];
-//       end
-//   end
-
 always_ff @( posedge clk_i )
   begin
     if( srst_i )
@@ -274,8 +182,6 @@ always_ff @( posedge clk_i )
           if( rd_addr > word_received  )
             src_endofpacket_o <= 1'b0;
         end
-      // if( rd_addr > word_received  )
-      //   src_endofpacket_o <= 1'b0;
   end
 
 always_ff @( posedge clk_i )
