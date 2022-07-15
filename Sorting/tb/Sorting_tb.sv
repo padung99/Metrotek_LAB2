@@ -1,4 +1,35 @@
 `timescale 1 ps / 1 ps
+// parameter MAX_PAKET = 13;
+// interface avalon_st (input clk_i_tb );
+//   logic valid;
+//   logic ready;
+//   logic [15:0] data;
+
+//   modport sink( input data, valid, output ready );
+//   modport source( input ready, output data, valid );
+
+// endinterface
+
+// typedef bit[15:0] packet_t[$];
+
+// class pk_avalon_st( );
+
+//   mailbox #( packet_t ) gen_pk;
+  
+//   virtual avalon_st avlst_if;
+
+//   task send_pk();
+//   endtask
+
+//   task receive_pk();
+//   endtask
+
+//   function new( virtual avalon_st avlst_if );
+//     this.avlst_if = avlst_if;
+//   endfunction
+
+// endclass
+
 module Sorting_tb;
 
 parameter DWIDTH_TB = 16;

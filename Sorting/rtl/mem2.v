@@ -45,8 +45,6 @@ module mem2 #(
 	clock,
 	data_a,
 	data_b,
-	rden_a,
-	rden_b,
 	wren_a,
 	wren_b,
 	q_a,
@@ -57,8 +55,6 @@ module mem2 #(
 	input	  clock;
 	input	[DWIDTH_MEM-1:0]  data_a;
 	input	[DWIDTH_MEM-1:0]  data_b;
-	input	  rden_a;
-	input	  rden_b;
 	input	  wren_a;
 	input	  wren_b;
 	output	[DWIDTH_MEM-1:0]  q_a;
@@ -67,8 +63,6 @@ module mem2 #(
 // synopsys translate_off
 `endif
 	tri1	  clock;
-	tri1	  rden_a;
-	tri1	  rden_b;
 	tri0	  wren_a;
 	tri0	  wren_b;
 `ifndef ALTERA_RESERVED_QIS
@@ -86,8 +80,6 @@ module mem2 #(
 				.clock0 (clock),
 				.data_a (data_a),
 				.data_b (data_b),
-				.rden_a (rden_a),
-				.rden_b (rden_b),
 				.wren_a (wren_a),
 				.wren_b (wren_b),
 				.q_a (sub_wire0),
@@ -103,7 +95,9 @@ module mem2 #(
 				.clocken1 (1'b1),
 				.clocken2 (1'b1),
 				.clocken3 (1'b1),
-				.eccstatus ());
+				.eccstatus (),
+				.rden_a (1'b1),
+				.rden_b (1'b1));
 	defparam
 		altsyncram_component.address_reg_b = "CLOCK0",
 		altsyncram_component.clock_enable_input_a = "BYPASS",
@@ -182,7 +176,7 @@ endmodule
 // Retrieval info: PRIVATE: REGdata NUMERIC "1"
 // Retrieval info: PRIVATE: REGq NUMERIC "0"
 // Retrieval info: PRIVATE: REGrdaddress NUMERIC "0"
-// Retrieval info: PRIVATE: REGrren NUMERIC "1"
+// Retrieval info: PRIVATE: REGrren NUMERIC "0"
 // Retrieval info: PRIVATE: REGwraddress NUMERIC "1"
 // Retrieval info: PRIVATE: REGwren NUMERIC "1"
 // Retrieval info: PRIVATE: SYNTH_WRAPPER_GEN_POSTFIX STRING "0"
@@ -197,7 +191,7 @@ endmodule
 // Retrieval info: PRIVATE: WRADDR_REG_B NUMERIC "1"
 // Retrieval info: PRIVATE: WRCTRL_ACLR_B NUMERIC "0"
 // Retrieval info: PRIVATE: enable NUMERIC "0"
-// Retrieval info: PRIVATE: rden NUMERIC "1"
+// Retrieval info: PRIVATE: rden NUMERIC "0"
 // Retrieval info: LIBRARY: altera_mf altera_mf.altera_mf_components.all
 // Retrieval info: CONSTANT: ADDRESS_REG_B STRING "CLOCK0"
 // Retrieval info: CONSTANT: CLOCK_ENABLE_INPUT_A STRING "BYPASS"
@@ -233,8 +227,6 @@ endmodule
 // Retrieval info: USED_PORT: data_b 0 0 16 0 INPUT NODEFVAL "data_b[15..0]"
 // Retrieval info: USED_PORT: q_a 0 0 16 0 OUTPUT NODEFVAL "q_a[15..0]"
 // Retrieval info: USED_PORT: q_b 0 0 16 0 OUTPUT NODEFVAL "q_b[15..0]"
-// Retrieval info: USED_PORT: rden_a 0 0 0 0 INPUT VCC "rden_a"
-// Retrieval info: USED_PORT: rden_b 0 0 0 0 INPUT VCC "rden_b"
 // Retrieval info: USED_PORT: wren_a 0 0 0 0 INPUT GND "wren_a"
 // Retrieval info: USED_PORT: wren_b 0 0 0 0 INPUT GND "wren_b"
 // Retrieval info: CONNECT: @address_a 0 0 8 0 address_a 0 0 8 0
@@ -242,8 +234,6 @@ endmodule
 // Retrieval info: CONNECT: @clock0 0 0 0 0 clock 0 0 0 0
 // Retrieval info: CONNECT: @data_a 0 0 16 0 data_a 0 0 16 0
 // Retrieval info: CONNECT: @data_b 0 0 16 0 data_b 0 0 16 0
-// Retrieval info: CONNECT: @rden_a 0 0 0 0 rden_a 0 0 0 0
-// Retrieval info: CONNECT: @rden_b 0 0 0 0 rden_b 0 0 0 0
 // Retrieval info: CONNECT: @wren_a 0 0 0 0 wren_a 0 0 0 0
 // Retrieval info: CONNECT: @wren_b 0 0 0 0 wren_b 0 0 0 0
 // Retrieval info: CONNECT: q_a 0 0 16 0 @q_a 0 0 16 0
