@@ -310,7 +310,7 @@ always_ff @( posedge clk_i )
       begin
         if( start_sending_out == 1'b1 )
           begin
-            if( rd_addr <= word_received )
+            if( rd_addr <= word_received +2)
               begin
                 wr_en_a    <= 1'b0;
                 addr_a     <= rd_addr;
@@ -381,9 +381,9 @@ always_ff @( posedge clk_i )
     else
       if( start_sending_out == 1'b1 )
         begin
-          if( rd_addr == 0 )
+          if( rd_addr == 0 + 2 )
             src_startofpacket_o <= 1'b1;
-          if( rd_addr == 1 )
+          if( rd_addr == 1 + 2 )
             src_startofpacket_o <= 1'b0;
         end
   end 
@@ -395,21 +395,21 @@ always_ff @( posedge clk_i )
     else
       if( start_sending_out == 1'b1 )
         begin
-          if( rd_addr == word_received )
+          if( rd_addr == word_received + 2 )
             src_endofpacket_o <= 1'b1;
-          if( rd_addr > word_received  )
+          if( rd_addr > word_received + 2 )
             src_endofpacket_o <= 1'b0;
         end
   end
 
 always_ff @( posedge clk_i )
   begin
-    if( start_sending_out == 1'b1 )
+    if( start_sending_out == 1'b1 && rd_addr == 2 )
       begin
         src_valid_o <= 1'b1;
       end
 
-    if( rd_addr > word_received )
+    if( rd_addr > word_received + 2)
       begin
         src_valid_o <= 1'b0;
       end
