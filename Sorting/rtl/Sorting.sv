@@ -257,12 +257,14 @@ always_ff @( posedge clk_i )
         addr_a  <= cnt % 2;
         tmp_i <= cnt % 2;
         tmp_addr_a <= cnt % 2;
+        tmp_data_a <= 0;
 
 
         wr_en_b <= 1'b0;
         addr_b  <= ( cnt % 2 ) + 1;
         tmp_i1 <= ( cnt % 2 ) + 1;
-        tmp_addr_b <= cnt % 2;
+        tmp_addr_b <= cnt % 2 + 1;
+        tmp_data_b <= 0;
 
         // tmp_index[cnt % 2] <= cnt % 2;
         $display("[%d] %d, [%d] %d",addr_a, q_a, addr_b, q_b );
