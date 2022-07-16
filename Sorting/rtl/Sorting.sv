@@ -214,7 +214,8 @@ always_comb
         end
       READ_S:
         begin
-          
+          if( src_endofpacket_o )
+            next_state = IDLE_S;
         end
     endcase
   end
