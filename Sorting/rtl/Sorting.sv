@@ -1,6 +1,6 @@
 module Sorting #(
   parameter DWIDTH      = 16,
-  parameter MAX_PKT_LEN = 13
+  parameter MAX_PKT_LEN = 1000
 ) (
   input  logic              clk_i,
   input  logic              srst_i,
@@ -264,7 +264,7 @@ always_ff @( posedge clk_i )
         tmp_addr_b <= cnt % 2 + 1;
         tmp_data_b <= 0;
 
-        $display("[%d] %d, [%d] %d",addr_a, q_a, addr_b, q_b );
+        // $display("[%d] %d, [%d] %d",addr_a, q_a, addr_b, q_b );
       end
     else if( state == SORT_WRITE_S )
       begin
