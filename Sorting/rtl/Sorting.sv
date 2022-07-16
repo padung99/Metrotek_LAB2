@@ -210,7 +210,7 @@ always_comb
 
       SORT_READ_NEXT_S:
         begin
-          if( i <=  word_received )
+          if( i <=  word_received + (cnt % 2) )
             next_state = SORT_WRITE_S;
           else
             next_state = SORT_READ_S;
@@ -289,7 +289,7 @@ always_ff @( posedge clk_i )
       begin
         wr_en_a <= 1'b0;
         addr_a  <= i;
-        if( i <= word_received )
+        if( i <= word_received + (cnt % 2) )
           begin
             tmp_addr_a <= i;
             tmp_i <= tmp_addr_a;
@@ -299,15 +299,24 @@ always_ff @( posedge clk_i )
 
         wr_en_b <= 1'b0;
         addr_b  <= i+1;
-        if( i <= word_received )
+        if( i <= word_received + (cnt % 2))
           begin
             tmp_addr_b <= i+1;
             tmp_i1 <= tmp_addr_b;
             tmp_data_b <= q_b;
           end
 
-        if( i > word_received )
-          cnt <= cnt + 1;
+        // if( cnt % 2 == 0 )
+          begin
+            if( i > word_received + (cnt % 2)) ///////////////
+              cnt <= cnt + 1;
+          end
+        // else
+        //   begin
+        //     if( i >= word_received +1) ///////////////
+        //       cnt <= cnt + 1;
+          // end
+          
 
       end
 
