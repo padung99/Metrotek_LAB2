@@ -32,6 +32,34 @@ default clocking cb
   @( posedge clk_i_tb );
 endclocking
 
+// avalon_st ast_sink_if(
+//   .clk( clk_i_tb );
+// );
+
+// avalon_st ast_source_if(
+//   .clk( clk_i_tb );
+// );
+
+// Sorting #(
+//   .DWIDTH      (DWIDTH_TB),
+//   .MAX_PKT_LEN (MAX_PKT_LEN_TB)
+// ) dut (
+//   .clk_i (clk_i_tb),
+//   .srst_i (srst_i_tb),
+
+//   .snk_data_i(ast_sink_if.data),
+//   .snk_startofpacket_i(ast_sink_if.sop),
+//   .snk_endofpacket_i(ast_sink_if.eop),
+//   .snk_valid_i(ast_sink_if.valid),
+//   .snk_ready_o(ast_sink_if.ready),
+
+//   .src_data_o(ast_source_if.data),
+//   .src_startofpacket_o( ast_source_if.sop ),
+//   .src_endofpacket_o( ast_source_if.eop),
+//   .src_valid_o( ast_source_if.valid ),
+//   .src_ready_i ( ast_source_if.ready )
+// );
+
 Sorting #(
   .DWIDTH      (DWIDTH_TB),
   .MAX_PKT_LEN (MAX_PKT_LEN_TB)
@@ -115,91 +143,20 @@ initial
     ##1;
     srst_i_tb <= 0;
     
-    // send_random_package( 3, data_gen );
-
-      gen_package( data_gen );
-      send_package( data_gen );
-      ##(MAX_DATA_SEND*MAX_DATA_SEND);
-
- 
-      gen_package( data_gen2 );
-      send_package( data_gen2 );
-      ##(MAX_DATA_SEND*MAX_DATA_SEND);
-      
-
-      gen_package( data_gen3 );
-      send_package( data_gen3 );
-
-    // gen_package( data_gen );
-    // send_package( data_gen );
-
-    // snk_data_i_tb <= 16'h0;
-    // ##1;
-    // snk_data_i_tb <= 16'h16;
-    // snk_startofpacket_i_tb <= 1;
-    // snk_valid_i_tb <= 1;
-
-    // ##1;
-    // snk_data_i_tb <= 16'h15;
-    // snk_startofpacket_i_tb <= 0;
-
-    // ##1;
-    // snk_data_i_tb <= 16'h17;
-
-    // ##1;
-    // snk_data_i_tb <= 16'h20;
-    // snk_endofpacket_i_tb <= 1;
-    // ##1;
-    // snk_endofpacket_i_tb <= 0;
-    // snk_valid_i_tb <= 0;
-    // ##1;
-    // snk_data_i_tb <= 16'h18;
-
-    // ##1;
-    // snk_data_i_tb <= 16'h23;
-
-    // ##1;
-    // snk_data_i_tb <= 16'h19;
-
-    // ##1;
-    // snk_data_i_tb <= 16'h22;
-
-    // ##1;
-    // snk_data_i_tb <= 16'h30;
-
-    // ##1;
-    // snk_data_i_tb <= 16'h14;
-
-    // ##1;
-    // snk_data_i_tb <= 16'h33;
-
-    // ##1;
-    // snk_data_i_tb <= 16'h41;
-
-    // ##1;
-    // snk_data_i_tb <= 16'h05;
-
-    // ##1;
-    // snk_data_i_tb <= 16'h13;
-    
-    // ##1;
-    // snk_data_i_tb <= 16'h02;
-    // snk_endofpacket_i_tb <= 1;
-
-    // ##1;
-    // snk_endofpacket_i_tb <= 0;
-    // snk_valid_i_tb <= 0;
-    
-    // ##5;
-    // src_ready_i_tb <= 1'b1;
-
-    // ##2;
-    // src_ready_i_tb <= 1'b0;
-    
-    // ##3;
-    // src_ready_i_tb <= 1'b1;
-    // ##(MAX_DATA_SEND*MAX_DATA_SEND);
+    gen_package( data_gen );
+    send_package( data_gen );
     ##(MAX_DATA_SEND*MAX_DATA_SEND);
+
+
+    gen_package( data_gen2 );
+    send_package( data_gen2 );
+    ##(MAX_DATA_SEND*MAX_DATA_SEND);
+    
+
+    gen_package( data_gen3 );
+    send_package( data_gen3 );
+    ##(MAX_DATA_SEND*MAX_DATA_SEND);
+
     $stop();
 
   end

@@ -1,4 +1,4 @@
-interface avalon_st (input clk_i_tb );
+interface avalon_st ( input clk );
   logic valid;
   logic ready;
   logic [15:0] data;

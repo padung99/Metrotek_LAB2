@@ -153,7 +153,7 @@ always_ff @( posedge clk_i )
         // if( src_endofpacket_o )
         //   start_sending_out <= 1'b0;
         //Check condtion to start sending out packet
-        if( cnt >= word_received + 1 ) 
+        if( (cnt >= word_received + 1) || ( cnt == word_received +1&& i > word_received ))
           start_sending_out <= 1'b1;
       end
   end
@@ -196,21 +196,25 @@ always_comb
       SORT_READ_S:
         begin
           next_state = SORT_WRITE_S;
+          if( cnt == word_received+1 && i > word_received ) //////////
+            next_state = READ_S;
         end
       
       SORT_WRITE_S:
         begin
           next_state = SORT_READ_NEXT_S;
+          if( cnt == word_received+1 && i > word_received ) //////////
+            next_state = READ_S;
         end
 
       SORT_READ_NEXT_S:
         begin
-          if( i <=  word_received + (word_received %2))
+          if( i <=  word_received + 2*(cnt%2)+ (word_received %2))
             next_state = SORT_WRITE_S;
           else
             next_state = SORT_READ_S;
           
-          if( cnt == word_received && i > cnt )
+          if( cnt == word_received +1&& i > word_received ) //////////
             next_state = READ_S;
         end
       READ_S:
@@ -287,7 +291,7 @@ always_ff @( posedge clk_i )
       begin
         wr_en_a <= 1'b0;
         addr_a  <= i;
-        if( i <= word_received  + (word_received %2))
+        if( i <= word_received  +2*(cnt%2) +  (word_received %2))
           begin
             tmp_addr_a <= i;
             tmp_i <= tmp_addr_a;
@@ -297,14 +301,14 @@ always_ff @( posedge clk_i )
         wr_en_b <= 1'b0;
         addr_b  <= i+1;
 
-        if( i <= word_received + (word_received %2))
+        if( i <= word_received  + 2*(cnt%2) + (word_received %2))
           begin
             tmp_addr_b <= i+1;
             tmp_i1 <= tmp_addr_b;
             tmp_data_b <= q_b;
           end
 
-        if( i > word_received + (word_received %2)) ///////////////
+        if( i > word_received + 2*(cnt%2) + (word_received %2) ) ///////////////
           cnt <= cnt + 1;
       end
 
