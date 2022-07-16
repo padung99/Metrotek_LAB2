@@ -19,7 +19,7 @@ set fbasename [file rootname [file tail [lindex $source_file end]]]
 vsim $fbasename
 
 add log -r /*
-add wave "sim:/Sorting_tb/dut/sort_mem"
+#add wave "sim:/Sorting_tb/dut/sort_mem"
 add wave -r *
 view -undock wave
 run -all

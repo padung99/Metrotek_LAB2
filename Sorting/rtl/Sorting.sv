@@ -19,7 +19,7 @@ module Sorting #(
 );
 
 parameter AWIDTH = $clog2(MAX_PKT_LEN) + 1 ;
-parameter MAX_INDEX = (MAX_PKT_LEN >> 1)+1;
+// parameter MAX_INDEX = (MAX_PKT_LEN >> 1)+1;
 
 logic [AWIDTH-1:0] wr_addr;
 logic [AWIDTH-1:0] rd_addr;
@@ -32,7 +32,7 @@ integer word_received;
 // integer first_loop_ind;
 // logic [DWIDTH-1:0] tmp;
 
-logic [DWIDTH-1:0] sort_mem [MAX_PKT_LEN+2:0];
+// logic [DWIDTH-1:0] sort_mem [MAX_PKT_LEN+2:0];
 
 integer index;
 int     cnt;
@@ -152,7 +152,8 @@ always_ff @( posedge clk_i )
         //   start_sending_out <= 1'b0;
         // if( src_endofpacket_o )
         //   start_sending_out <= 1'b0;
-        if( cnt == word_received+1 ) /////////
+        //Check condtion to start sending out packet
+        if( cnt >= word_received + 1 ) 
           start_sending_out <= 1'b1;
       end
   end
@@ -204,7 +205,7 @@ always_comb
 
       SORT_READ_NEXT_S:
         begin
-          if( i <=  word_received + (cnt % 2) )
+          if( i <=  word_received + (word_received %2))
             next_state = SORT_WRITE_S;
           else
             next_state = SORT_READ_S;
@@ -286,7 +287,7 @@ always_ff @( posedge clk_i )
       begin
         wr_en_a <= 1'b0;
         addr_a  <= i;
-        if( i <= word_received + (cnt % 2) )
+        if( i <= word_received  + (word_received %2))
           begin
             tmp_addr_a <= i;
             tmp_i <= tmp_addr_a;
@@ -296,14 +297,14 @@ always_ff @( posedge clk_i )
         wr_en_b <= 1'b0;
         addr_b  <= i+1;
 
-        if( i <= word_received + (cnt % 2))
+        if( i <= word_received + (word_received %2))
           begin
             tmp_addr_b <= i+1;
             tmp_i1 <= tmp_addr_b;
             tmp_data_b <= q_b;
           end
 
-        if( i > word_received + (cnt % 2)) ///////////////
+        if( i > word_received + (word_received %2)) ///////////////
           cnt <= cnt + 1;
       end
 
