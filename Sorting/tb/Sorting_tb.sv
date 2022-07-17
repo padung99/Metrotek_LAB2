@@ -1,5 +1,58 @@
 `timescale 1 ps / 1 ps
 parameter MAX_PAKET = 13;
+//////////////////////////////////////////////////////////////////////
+class pk_avalon_st;
+
+
+mailbox #( logic[15:0] ) pk_data;
+
+virtual avalon_st avlst_if;
+
+`define cb @( posedge avlst_if.clk );
+
+// clocking cb
+//   @( posedge avlst_if.clk );
+// endclocking
+
+function new( virtual avalon_st _avlst_if, mailbox #( logic[15:0] ) _pk_data  );
+  this.avlst_if = _avlst_if;
+  this.pk_data  = _pk_data;
+endfunction
+
+//Send pk to snk
+task send_pk( );
+
+logic [15:0] new_pk_data;
+int total_data;
+
+total_data = pk_data.num();
+
+while( pk_data.num() != 0 )
+  begin
+    // if( avlst_if.ready )
+      begin
+        pk_data.get( new_pk_data );
+        avlst_if.data = new_pk_data;
+        // if( _pk_data.num() == total_data-2 || _pk_data.num() == total_data- 10 ||  _pk_data.num() == total_data-25 ||  _pk_data.num() == total_data-45 )
+        //   begin
+        //     avlst_if.sop = 1;
+        //     avlst_if.valid = 1;
+        //     ##1;
+        //     avlst_if.sop = 0;
+        //     avlst_if.valid = $urandom_range(1,0);
+        //   end
+        `cb;
+      end
+  end
+
+endtask
+
+task receive_pk();
+endtask
+
+endclass
+
+////////////////////////////////////////////////////////////////
 
 module Sorting_tb;
 
@@ -24,6 +77,8 @@ logic              src_startofpacket_o_tb;
 logic              src_endofpacket_o_tb;
 logic              src_ready_i_tb;
 
+mailbox #( logic[15:0] ) pk_data = new();
+
 initial
   forever
   #5 clk_i_tb = !clk_i_tb;
@@ -32,13 +87,39 @@ default clocking cb
   @( posedge clk_i_tb );
 endclocking
 
-// avalon_st ast_sink_if(
-//   .clk( clk_i_tb );
-// );
+avalon_st ast_sink_if(
+  .clk( clk_i_tb )
+);
 
-// avalon_st ast_source_if(
-//   .clk( clk_i_tb );
-// );
+avalon_st ast_source_if(
+  .clk( clk_i_tb )
+);
+
+//Declare class 
+pk_avalon_st avalon_st_p_send;
+pk_avalon_st avalon_st_p_receive;
+
+
+
+Sorting #(
+  .DWIDTH              ( DWIDTH_TB           ),
+  .MAX_PKT_LEN         ( MAX_PKT_LEN_TB      )
+) dut (
+  .clk_i               ( clk_i_tb            ),
+  .srst_i              ( srst_i_tb           ),
+
+  .snk_data_i          ( ast_sink_if.data    ),
+  .snk_startofpacket_i ( ast_sink_if.sop     ),
+  .snk_endofpacket_i   ( ast_sink_if.eop     ),
+  .snk_valid_i         ( ast_sink_if.valid   ),
+  .snk_ready_o         ( ast_sink_if.ready   ),
+
+  .src_data_o          ( ast_source_if.data  ),
+  .src_startofpacket_o ( ast_source_if.sop   ),
+  .src_endofpacket_o   ( ast_source_if.eop   ),
+  .src_valid_o         ( ast_source_if.valid ),
+  .src_ready_i         ( ast_source_if.ready )
+);
 
 // Sorting #(
 //   .DWIDTH      (DWIDTH_TB),
@@ -47,38 +128,18 @@ endclocking
 //   .clk_i (clk_i_tb),
 //   .srst_i (srst_i_tb),
 
-//   .snk_data_i(ast_sink_if.data),
-//   .snk_startofpacket_i(ast_sink_if.sop),
-//   .snk_endofpacket_i(ast_sink_if.eop),
-//   .snk_valid_i(ast_sink_if.valid),
-//   .snk_ready_o(ast_sink_if.ready),
+//   .snk_data_i(snk_data_i_tb),
+//   .snk_startofpacket_i(snk_startofpacket_i_tb),
+//   .snk_endofpacket_i(snk_endofpacket_i_tb),
+//   .snk_valid_i(snk_valid_i_tb),
+//   .snk_ready_o(snk_ready_o_tb),
 
-//   .src_data_o(ast_source_if.data),
-//   .src_startofpacket_o( ast_source_if.sop ),
-//   .src_endofpacket_o( ast_source_if.eop),
-//   .src_valid_o( ast_source_if.valid ),
-//   .src_ready_i ( ast_source_if.ready )
+//   .src_data_o(src_data_o_tb),
+//   .src_startofpacket_o( src_startofpacket_o_tb ),
+//   .src_endofpacket_o( src_endofpacket_o_tb ),
+//   .src_valid_o( src_valid_o_tb ),
+//   .src_ready_i ( src_ready_i_tb )
 // );
-
-Sorting #(
-  .DWIDTH      (DWIDTH_TB),
-  .MAX_PKT_LEN (MAX_PKT_LEN_TB)
-) dut (
-  .clk_i (clk_i_tb),
-  .srst_i (srst_i_tb),
-
-  .snk_data_i(snk_data_i_tb),
-  .snk_startofpacket_i(snk_startofpacket_i_tb),
-  .snk_endofpacket_i(snk_endofpacket_i_tb),
-  .snk_valid_i(snk_valid_i_tb),
-  .snk_ready_o(snk_ready_o_tb),
-
-  .src_data_o(src_data_o_tb),
-  .src_startofpacket_o( src_startofpacket_o_tb ),
-  .src_endofpacket_o( src_endofpacket_o_tb ),
-  .src_valid_o( src_valid_o_tb ),
-  .src_ready_i ( src_ready_i_tb )
-);
 
 mailbox #( logic [DWIDTH_TB-1:0] ) data_gen  = new();
 mailbox #( logic [DWIDTH_TB-1:0] ) data_gen2 = new();
@@ -137,26 +198,30 @@ endtask
 
 initial 
   begin
+    gen_package( data_gen );
+    avalon_st_p_send = new( ast_sink_if, data_gen );
+
     src_ready_i_tb <= 1'b1;
 
     srst_i_tb <= 1;
     ##1;
     srst_i_tb <= 0;
     
-    gen_package( data_gen );
-    send_package( data_gen );
-    ##(MAX_DATA_SEND*MAX_DATA_SEND);
+    avalon_st_p_send.send_pk();
+    // gen_package( data_gen );
+    // send_package( data_gen );
+    // ##(MAX_DATA_SEND*MAX_DATA_SEND);
 
 
-    gen_package( data_gen2 );
-    send_package( data_gen2 );
-    ##(MAX_DATA_SEND*MAX_DATA_SEND);
+    // gen_package( data_gen2 );
+    // send_package( data_gen2 );
+    // ##(MAX_DATA_SEND*MAX_DATA_SEND);
     
 
-    gen_package( data_gen3 );
-    send_package( data_gen3 );
-    ##(MAX_DATA_SEND*MAX_DATA_SEND);
-
+    // gen_package( data_gen3 );
+    // send_package( data_gen3 );
+    // ##(MAX_DATA_SEND*MAX_DATA_SEND);
+    ##200;
     $stop();
 
   end

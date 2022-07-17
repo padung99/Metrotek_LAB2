@@ -4,6 +4,8 @@ vlib work
 set source_file {
   "../rtl/Sorting.sv"
   "../rtl/mem2.v"
+  "avalon_st.sv"
+  "pk_avalon_st.sv"
   "Sorting_tb.sv"
 }
 
