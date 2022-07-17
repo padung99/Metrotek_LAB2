@@ -1,32 +1,32 @@
 `timescale 1 ps / 1 ps
 
 import avlst_pk::*;
-parameter MAX_PACKET = 5;
+parameter MAX_PACKET = 100;
 
 module Sorting_tb;
 
 parameter DWIDTH_TB = 16;
-parameter MAX_PKT_LEN_TB = 13;
+parameter MAX_PKT_LEN_TB = 14;
 
-parameter MAX_DATA_SEND = MAX_PKT_LEN_TB+5;
+// parameter MAX_DATA_SEND = MAX_PKT_LEN_TB+5;
 
 // localparam AWIDTH_TB = $clog2(MAX_PKT_LEN_TB) + 1;
 
 bit                clk_i_tb;
 logic              srst_i_tb;
 
-logic [DWIDTH_TB-1:0] snk_data_i_tb;
-logic              snk_startofpacket_i_tb;
-logic              snk_endofpacket_i_tb;
-logic              snk_valid_i_tb;
-logic              snk_ready_o_tb;
+// logic [DWIDTH_TB-1:0] snk_data_i_tb;
+// logic              snk_startofpacket_i_tb;
+// logic              snk_endofpacket_i_tb;
+// logic              snk_valid_i_tb;
+// logic              snk_ready_o_tb;
 
-logic [DWIDTH_TB-1:0] src_data_o_tb;
-logic              src_startofpacket_o_tb;
-logic              src_endofpacket_o_tb;
-logic              src_ready_i_tb;
+// logic [DWIDTH_TB-1:0] src_data_o_tb;
+// logic              src_startofpacket_o_tb;
+// logic              src_endofpacket_o_tb;
+// logic              src_ready_i_tb;
 
-mailbox #( logic[DWIDTH_TB-1:0] ) pk_data = new();
+// mailbox #( logic[DWIDTH_TB-1:0] ) pk_data = new();
 
 initial
   forever
@@ -47,14 +47,10 @@ avalon_st ast_source_if(
 
 //Declare object 
 pk_avalon_st #(
-  .DWIDTH_PK    ( DWIDTH_TB      ),
-  .WIDTH_MAX_PK ( MAX_PKT_LEN_TB ),
   .PACKET       ( MAX_PACKET     )
 ) avalon_st_p_send;
 
 pk_avalon_st #(
-  .DWIDTH_PK    ( DWIDTH_TB      ),
-  .WIDTH_MAX_PK ( MAX_PKT_LEN_TB ),
   .PACKET       ( MAX_PACKET     )
 ) avalon_st_p_receive;
 
@@ -87,13 +83,14 @@ mailbox #( pkt_t ) valid_input   = new();
 
 task gen_package( mailbox #( pkt_t ) _tx_fifo );
 
-logic [DWIDTH_TB-1:0] data_new;
+
 pkt_t                 pk_new;
 
 int                   number_of_data;
 
 for( int i = 0; i < MAX_PACKET; i++ )
   begin
+    logic [DWIDTH_TB-1:0] data_new;
     number_of_data = $urandom_range( MAX_PKT_LEN_TB,6 );
     for( int j = 0; j < number_of_data; j++ )
       begin
@@ -101,6 +98,7 @@ for( int i = 0; i < MAX_PACKET; i++ )
         pk_new.push_back( data_new );
       end
     _tx_fifo.put( pk_new );
+    pk_new = {};
   end
 endtask;
 
@@ -131,6 +129,7 @@ bit _error;
 
 number_of_pk =_valid_input.num();
 
+$display("Packet sended: %0d, packet received: %0d", _valid_input.num(), _rx_fifo.num());
 if( _valid_input.num() != _rx_fifo.num() )
   begin
     $error("Number of packets mismatch!!");
