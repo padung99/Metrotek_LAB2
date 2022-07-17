@@ -1,7 +1,7 @@
 `timescale 1 ps / 1 ps
 
 import avlst_pk::*;
-parameter MAX_PACKET = 3;
+parameter MAX_PACKET = 5;
 
 module Sorting_tb;
 
@@ -48,12 +48,14 @@ avalon_st ast_source_if(
 //Declare object 
 pk_avalon_st #(
   .DWIDTH_PK    ( DWIDTH_TB      ),
-  .WIDTH_MAX_PK ( MAX_PKT_LEN_TB )
+  .WIDTH_MAX_PK ( MAX_PKT_LEN_TB ),
+  .PACKET       ( MAX_PACKET     )
 ) avalon_st_p_send;
 
 pk_avalon_st #(
   .DWIDTH_PK    ( DWIDTH_TB      ),
-  .WIDTH_MAX_PK ( MAX_PKT_LEN_TB )
+  .WIDTH_MAX_PK ( MAX_PKT_LEN_TB ),
+  .PACKET       ( MAX_PACKET     )
 ) avalon_st_p_receive;
 
 // pk_avalon_st avalon_st_p_receive;
@@ -102,17 +104,8 @@ mailbox #( logic [DWIDTH_TB-1:0] ) data_gen  = new();
 mailbox #( logic [DWIDTH_TB-1:0] ) data_gen2 = new();
 mailbox #( logic [DWIDTH_TB-1:0] ) data_gen3 = new();
 
-mailbox #( pkt_t ) tx_fifo = new();   
-// task gen_package( mailbox #( logic [DWIDTH_TB-1:0] ) _data_gen );
-
-// logic [DWIDTH_TB-1:0] data_new;
-
-// for( int i = 0; i < MAX_DATA_SEND; i++ )
-//   begin
-//     data_new = $urandom_range( 2**DWIDTH_TB-1,0 );
-//     _data_gen.put( data_new );
-//   end
-// endtask;
+mailbox #( pkt_t ) tx_fifo = new();
+mailbox #( pkt_t ) rx_fifo = new(); 
 
 task gen_package( mailbox #( pkt_t ) _tx_fifo );
 
@@ -183,10 +176,14 @@ initial
  /////////////////////////////////////////
     ast_source_if.ready <= 1'b1;
     gen_package( tx_fifo );
-    avalon_st_p_send = new( ast_sink_if, tx_fifo );
+    avalon_st_p_send    = new( ast_sink_if, tx_fifo, rx_fifo );
+    avalon_st_p_receive = new( ast_source_if, tx_fifo, rx_fifo );
 
-    avalon_st_p_send.send_pk();
-    ##(MAX_DATA_SEND*MAX_DATA_SEND);
+    fork
+      avalon_st_p_send.send_pk();
+      avalon_st_p_receive.receive_pk();
+    join
+    // ##(MAX_DATA_SEND*MAX_DATA_SEND);
 ////////////////////////////////////////
     // src_ready_i_tb <= 1'b1;
     // gen_package( data_gen );

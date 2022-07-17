@@ -4,10 +4,12 @@ typedef logic [15:0] pkt_t [$];  //////////////should override parameter
 
 class pk_avalon_st #(
   parameter DWIDTH_PK    = 16,
-  parameter WIDTH_MAX_PK = 20
+  parameter WIDTH_MAX_PK = 20,
+  parameter PACKET       = 5
 );
-                                                
-mailbox #( pkt_t ) tx_fifo;   
+                                            
+mailbox #( pkt_t ) tx_fifo;
+mailbox #( pkt_t ) rx_fifo;
 
 // mailbox #( logic[DWIDTH_PK-1:0] ) tx_fifo;
 
@@ -19,9 +21,13 @@ virtual avalon_st avlst_if;
 //   @( posedge avlst_if.clk );
 // endclocking
 
-function new( virtual avalon_st _avlst_if, mailbox #( pkt_t ) _tx_fifo  );
+function new( virtual avalon_st _avlst_if,
+              mailbox #( pkt_t ) _tx_fifo,
+              mailbox #( pkt_t ) _rx_fifo
+              );
   this.avlst_if = _avlst_if;
   this.tx_fifo  = _tx_fifo;
+  this.rx_fifo  = _rx_fifo;
 endfunction
 
 //Send multiple pk to snk
@@ -72,15 +78,42 @@ while( tx_fifo.num() != 0 )
           end
       end
 
-    //Delay between packets
-    for( int i =0; i< total_data*total_data + 2*total_data+5; i++ )
+    //Delay between packets:
+    //Sort delay: total_data*total_data/2;
+    //Write delay: total_data;
+    //Read delay: total_data;
+    for( int i =0; i< total_data*total_data/2 + 2*total_data+10; i++ )
       `cb;
 
   end
 
 endtask
 
+//Source (receive packets)
 task receive_pk();
+
+pkt_t new_rx_fifo;
+forever
+  begin
+    `cb;
+    if( avlst_if.valid == 1'b1 && avlst_if.eop != 1'b1 )
+      begin
+        new_rx_fifo.push_back( avlst_if.data );
+        $display( "[%0d]: %0d",new_rx_fifo.size(), avlst_if.data );
+      end
+    else if( avlst_if.valid == 1'b1 && avlst_if.eop == 1'b1 )
+      begin
+        new_rx_fifo.push_back( avlst_if.data );
+        $display( "[%0d]: %0d",new_rx_fifo.size(), avlst_if.data );
+        $display( "\n" );
+
+        rx_fifo.put( new_rx_fifo );
+        new_rx_fifo = {}; //Reset packet
+      end
+    
+    if( rx_fifo.num() >= PACKET )
+      break;
+  end
 endtask
 
 endclass
