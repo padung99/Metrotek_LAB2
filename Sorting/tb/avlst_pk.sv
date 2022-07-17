@@ -1,6 +1,6 @@
 package  avlst_pk;
 
-typedef logic [15:0] pkt_t [$];  //////////////should override parameter
+typedef logic [15:0] pkt_t [$];
 
 
 class pk_avalon_st #(

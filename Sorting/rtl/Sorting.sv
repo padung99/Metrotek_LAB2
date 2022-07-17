@@ -66,28 +66,25 @@ logic [MAX_PKT_LEN-1:0] [AWIDTH-1:0] tmp_index;
 enum logic [2:0] {
   IDLE_S,
   WRITE_S,
-  // SORT_COMPARE_S,
   SORT_READ_S,
   SORT_WRITE_S,
   SORT_READ_NEXT_S,
-  // SORT_INCREASE_S,
-  // SORT_DELAY_S,
   READ_S
 } state, next_state;
 
 mem2 #(
-  .DWIDTH_MEM ( DWIDTH ),
-  .DWIDTH_MAX_PKT ( AWIDTH )
+  .DWIDTH_MEM     ( DWIDTH  ),
+  .DWIDTH_MAX_PKT ( AWIDTH  )
 ) mem2_inst (
-	.address_a( addr_a ),
-	.address_b( addr_b ),
-	.clock( clk_i ),
-	.data_a( data_a ),
-	.data_b( data_b ),
-	.wren_a( wr_en_a ),
-	.wren_b( wr_en_b ),
-	.q_a( q_a ),
-	.q_b( q_b )
+	.address_a      ( addr_a  ),
+	.address_b      ( addr_b  ),
+	.clock          ( clk_i   ),
+	.data_a         ( data_a  ),
+	.data_b         ( data_b  ),
+	.wren_a         ( wr_en_a ),
+	.wren_b         ( wr_en_b ),
+	.q_a            ( q_a     ),
+	.q_b            ( q_b     )
 );
 
 always_ff @( posedge clk_i )

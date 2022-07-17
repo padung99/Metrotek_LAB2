@@ -8,25 +8,10 @@ module Sorting_tb;
 parameter DWIDTH_TB = 16;
 parameter MAX_PKT_LEN_TB = 14;
 
-// parameter MAX_DATA_SEND = MAX_PKT_LEN_TB+5;
-
-// localparam AWIDTH_TB = $clog2(MAX_PKT_LEN_TB) + 1;
 
 bit                clk_i_tb;
 logic              srst_i_tb;
 
-// logic [DWIDTH_TB-1:0] snk_data_i_tb;
-// logic              snk_startofpacket_i_tb;
-// logic              snk_endofpacket_i_tb;
-// logic              snk_valid_i_tb;
-// logic              snk_ready_o_tb;
-
-// logic [DWIDTH_TB-1:0] src_data_o_tb;
-// logic              src_startofpacket_o_tb;
-// logic              src_endofpacket_o_tb;
-// logic              src_ready_i_tb;
-
-// mailbox #( logic[DWIDTH_TB-1:0] ) pk_data = new();
 
 initial
   forever
@@ -45,7 +30,7 @@ avalon_st ast_source_if(
   .clk( clk_i_tb )
 );
 
-//Declare object 
+//Declare objects
 pk_avalon_st #(
   .PACKET       ( MAX_PACKET     )
 ) avalon_st_p_send;
@@ -54,7 +39,6 @@ pk_avalon_st #(
   .PACKET       ( MAX_PACKET     )
 ) avalon_st_p_receive;
 
-// pk_avalon_st avalon_st_p_receive;
 
 Sorting #(
   .DWIDTH              ( DWIDTH_TB           ),
