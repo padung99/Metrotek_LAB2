@@ -1,11 +1,15 @@
 package  avlst_pk;
 
+typedef logic [15:0] pkt_t [$];  //////////////should override parameter
+
 class pk_avalon_st #(
   parameter DWIDTH_PK    = 16,
   parameter WIDTH_MAX_PK = 20
 );
+                                                
+mailbox #( pkt_t ) tx_fifo;   
 
-mailbox #( logic[DWIDTH_PK-1:0] ) pk_data;
+// mailbox #( logic[DWIDTH_PK-1:0] ) tx_fifo;
 
 virtual avalon_st avlst_if;
 
@@ -15,52 +19,60 @@ virtual avalon_st avlst_if;
 //   @( posedge avlst_if.clk );
 // endclocking
 
-function new( virtual avalon_st _avlst_if, mailbox #( logic[DWIDTH_PK-1:0] ) _pk_data  );
+function new( virtual avalon_st _avlst_if, mailbox #( pkt_t ) _tx_fifo  );
   this.avlst_if = _avlst_if;
-  this.pk_data  = _pk_data;
+  this.tx_fifo  = _tx_fifo;
 endfunction
 
-//Send 1 pk to snk
+//Send multiple pk to snk
 task send_pk( );
 
-logic [DWIDTH_PK-1:0] new_pk_data;
+pkt_t new_tx_fifo;
 int total_data;
 
 int sop_random;
 int eop_random;
 
-total_data = pk_data.num();
-sop_random = $urandom_range( 5,2 );
-eop_random = $urandom_range( 4,2 );
-
-while( pk_data.num() != 0 )
+while( tx_fifo.num() != 0 )
   begin
-    pk_data.get( new_pk_data );
-    avlst_if.data = new_pk_data;
-    if( avlst_if.ready )
+    tx_fifo.get( new_tx_fifo );
+    // avlst_if.data = new_tx_fifo;
+    total_data = new_tx_fifo.size();
+    sop_random = $urandom_range( 5,2 );
+    eop_random = $urandom_range( 4,2 );
+
+    for( int i = 0; i < new_tx_fifo.size(); i++ )
       begin
-        if( pk_data.num() == total_data-sop_random )
+        avlst_if.data = new_tx_fifo[i];
+        if( avlst_if.ready )
           begin
-            avlst_if.sop   = 1'b1;
-            avlst_if.valid = 1'b1;
-            `cb;
-            avlst_if.sop = 1'b0;
-          end
-        else if( pk_data.num() == eop_random )
-          begin
-            avlst_if.eop   = 1'b1;
-            avlst_if.valid = 1'b1;
-            `cb;
-            avlst_if.eop = 1'b0;
-          end
-        else 
-          begin
-            avlst_if.sop   = 1'b0;
-            avlst_if.eop   = 1'b0;
-            avlst_if.valid = $urandom_range(1,0);
-            `cb;
+            if( i == sop_random )
+              begin
+                avlst_if.sop   = 1'b1;
+                avlst_if.valid = 1'b1;
+                `cb;
+                avlst_if.sop = 1'b0;
+              end
+            else if( i == total_data - eop_random )
+              begin
+                avlst_if.eop   = 1'b1;
+                avlst_if.valid = 1'b1;
+                `cb;
+                avlst_if.eop = 1'b0;
+              end
+            else 
+              begin
+                avlst_if.sop   = 1'b0;
+                avlst_if.eop   = 1'b0;
+                avlst_if.valid = $urandom_range(1,0);
+                `cb;
+              end
           end
       end
+
+    //Delay between packets
+    for( int i =0; i< total_data*total_data + 2*total_data+5; i++ )
+      `cb;
 
   end
 
