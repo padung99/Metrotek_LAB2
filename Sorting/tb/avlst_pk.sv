@@ -38,8 +38,8 @@ while( tx_fifo.num() != 0 )
     tx_fifo.get( new_tx_fifo );
     // avlst_if.data = new_tx_fifo;
     total_data = new_tx_fifo.size();
-    sop_random = $urandom_range( 5,2 );
-    eop_random = $urandom_range( 4,2 );
+    sop_random = 0;
+    eop_random = total_data;
 
     for( int i = 0; i < new_tx_fifo.size(); i++ )
       begin
@@ -52,13 +52,15 @@ while( tx_fifo.num() != 0 )
                 avlst_if.valid = 1'b1;
                 `cb;
                 avlst_if.sop = 1'b0;
+                avlst_if.valid = 1'b0;
               end
-            else if( i == total_data - eop_random )
+            else if( i == eop_random -1)
               begin
                 avlst_if.eop   = 1'b1;
                 avlst_if.valid = 1'b1;
                 `cb;
                 avlst_if.eop = 1'b0;
+                avlst_if.valid = 1'b0;
               end
             else 
               begin

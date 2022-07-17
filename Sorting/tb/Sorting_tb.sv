@@ -102,7 +102,7 @@ mailbox #( logic [DWIDTH_TB-1:0] ) data_gen  = new();
 mailbox #( logic [DWIDTH_TB-1:0] ) data_gen2 = new();
 mailbox #( logic [DWIDTH_TB-1:0] ) data_gen3 = new();
 
-mailbox #( pkt_t ) tx_fifo;   
+mailbox #( pkt_t ) tx_fifo = new();   
 // task gen_package( mailbox #( logic [DWIDTH_TB-1:0] ) _data_gen );
 
 // logic [DWIDTH_TB-1:0] data_new;
@@ -129,7 +129,7 @@ for( int i = 0; i < MAX_PACKET; i++ )
         data_new = $urandom_range( 2**DWIDTH_TB-1,0 );
         pk_new.push_back( data_new );
       end
-    // _tx_fifo.put( pk_new );
+    _tx_fifo.put( pk_new );
   end
 endtask;
 
