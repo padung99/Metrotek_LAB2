@@ -1,7 +1,7 @@
 `timescale 1 ps / 1 ps
 
 import avlst_pk::*;
-parameter MAX_PACKET = 100;
+parameter MAX_PACKET = 105;
 
 module Sorting_tb;
 

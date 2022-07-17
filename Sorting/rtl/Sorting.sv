@@ -18,7 +18,7 @@ module Sorting #(
   input  logic              src_ready_i
 );
 
-parameter AWIDTH = $clog2(MAX_PKT_LEN) + 1 ;
+localparam AWIDTH = $clog2(MAX_PKT_LEN) + 1 ;
 
 logic [AWIDTH-1:0] wr_addr;
 logic [AWIDTH-1:0] rd_addr;
@@ -29,7 +29,6 @@ logic              start_sending_out;
 
 integer word_received;
 
-integer index;
 int     cnt;
 integer i;
 integer tmp_i;
@@ -59,8 +58,6 @@ logic [DWIDTH-1:0] q_b;
 
 logic [DWIDTH-1:0] q_tmp_a;
 logic [DWIDTH-1:0] q_tmp_b;
-
-logic [MAX_PKT_LEN-1:0] [AWIDTH-1:0] tmp_index;
 
 
 enum logic [2:0] {
@@ -139,11 +136,7 @@ always_ff @( posedge clk_i )
       begin
         if( rd_addr > word_received )
           start_sending_out <= 1'b0;
-        // if( snk_valid_i && snk_startofpacket_i )
-        //   start_sending_out <= 1'b0;
-        // if( src_endofpacket_o )
-        //   start_sending_out <= 1'b0;
-        //Check condtion to start sending out packet
+
         if( (cnt >= word_received + 1) || ( cnt == word_received +1&& i > word_received ))
           start_sending_out <= 1'b1;
       end
@@ -236,8 +229,7 @@ always_ff @( posedge clk_i )
         wr_en_a <= 1;
         addr_a  <= wr_addr;
         data_a  <= snk_data_i;
-        cnt <= 0;
-        index <= 0;
+        cnt     <= 0;
       end
     else if( state == WRITE_S )
       begin
@@ -256,19 +248,19 @@ always_ff @( posedge clk_i )
       end
     else if( state == SORT_READ_S )
       begin
-        i <= cnt % 2;
-        wr_en_a <= 1'b0;
-        addr_a  <= cnt % 2;
-        tmp_i <= cnt % 2;
-        tmp_addr_a <= cnt % 2;
-        tmp_data_a <= 0;
+        i          <= cnt % 2;
+        wr_en_a    <= 1'b0;
+        addr_a     <= (AWIDTH)'(cnt % 2);
+        tmp_i      <= cnt % 2;
+        tmp_addr_a <= (AWIDTH)'(cnt % 2);
+        tmp_data_a <= (DWIDTH)'(0);
 
 
-        wr_en_b <= 1'b0;
-        addr_b  <= ( cnt % 2 ) + 1;
-        tmp_i1 <= ( cnt % 2 ) + 1;
-        tmp_addr_b <= cnt % 2 + 1;
-        tmp_data_b <= 0;
+        wr_en_b    <= 1'b0;
+        addr_b     <= (AWIDTH)'(( cnt % 2 ) + 1);
+        tmp_i1     <= ( cnt % 2 ) + 1;
+        tmp_addr_b <= (AWIDTH)'(( cnt % 2 ) + 1);
+        tmp_data_b <= (DWIDTH)'(0);
 
         // $display("[%d] %d, [%d] %d",addr_a, q_a, addr_b, q_b );
       end
@@ -277,11 +269,11 @@ always_ff @( posedge clk_i )
         if( tmp_data_a > tmp_data_b )
           begin
             wr_en_a <= 1'b1;
-            addr_a  <= tmp_i;
+            addr_a  <= tmp_i[AWIDTH-1:0]; /////////
             data_a  <= tmp_data_b;
 
             wr_en_b <= 1'b1;
-            addr_b  <= tmp_i1;
+            addr_b  <= tmp_i1[AWIDTH-1:0];
             data_b  <= tmp_data_a;
           end
 
@@ -291,19 +283,19 @@ always_ff @( posedge clk_i )
     else if( state == SORT_READ_NEXT_S )
       begin
         wr_en_a <= 1'b0;
-        addr_a  <= i;
+        addr_a  <= i[AWIDTH-1:0];
         if( word_received %2 == 0 )
           begin
             if( i <= word_received  +2*(cnt%2))
               begin
-                tmp_addr_a <= i;
-                tmp_i <= tmp_addr_a;
+                tmp_addr_a <= i[AWIDTH-1:0];
+                tmp_i[AWIDTH-1:0] <= tmp_addr_a;
                 tmp_data_a <= q_a;
               end
             
             if( i <= word_received  + 2*(cnt%2) )
               begin
-                tmp_addr_b <= i+1;
+                tmp_addr_b <= i[AWIDTH-1:0]+ (AWIDTH)'(1);
                 tmp_i1 <= tmp_addr_b;
                 tmp_data_b <= q_b;
               end
@@ -316,15 +308,15 @@ always_ff @( posedge clk_i )
           begin
             if( i <= word_received + (cnt[0] ^ 1'b1))
               begin
-                tmp_addr_a <= i;
-                tmp_i <= tmp_addr_a;
-                tmp_data_a <= q_a;
+                tmp_addr_a        <= i[AWIDTH-1:0];
+                tmp_i[AWIDTH-1:0] <= tmp_addr_a;
+                tmp_data_a        <= q_a;
               end
             
             if( i <= word_received  + (cnt[0] ^ 1'b1))
               begin
-                tmp_addr_b <= i+1;
-                tmp_i1 <= tmp_addr_b;
+                tmp_addr_b <= i[AWIDTH-1:0]+ (AWIDTH)'(1);
+                tmp_i1     <= tmp_addr_b;
                 tmp_data_b <= q_b;
               end
           
