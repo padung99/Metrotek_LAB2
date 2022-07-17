@@ -80,32 +80,10 @@ Sorting #(
   .src_ready_i         ( ast_source_if.ready )
 );
 
-// Sorting #(
-//   .DWIDTH      (DWIDTH_TB),
-//   .MAX_PKT_LEN (MAX_PKT_LEN_TB)
-// ) dut (
-//   .clk_i (clk_i_tb),
-//   .srst_i (srst_i_tb),
-
-//   .snk_data_i(snk_data_i_tb),
-//   .snk_startofpacket_i(snk_startofpacket_i_tb),
-//   .snk_endofpacket_i(snk_endofpacket_i_tb),
-//   .snk_valid_i(snk_valid_i_tb),
-//   .snk_ready_o(snk_ready_o_tb),
-
-//   .src_data_o(src_data_o_tb),
-//   .src_startofpacket_o( src_startofpacket_o_tb ),
-//   .src_endofpacket_o( src_endofpacket_o_tb ),
-//   .src_valid_o( src_valid_o_tb ),
-//   .src_ready_i ( src_ready_i_tb )
-// );
-
-mailbox #( logic [DWIDTH_TB-1:0] ) data_gen  = new();
-mailbox #( logic [DWIDTH_TB-1:0] ) data_gen2 = new();
-mailbox #( logic [DWIDTH_TB-1:0] ) data_gen3 = new();
-
-mailbox #( pkt_t ) tx_fifo = new();
-mailbox #( pkt_t ) rx_fifo = new(); 
+mailbox #( pkt_t ) tx_fifo       = new();
+mailbox #( pkt_t ) rx_fifo       = new(); 
+mailbox #( pkt_t ) valid_tx_fifo = new();
+mailbox #( pkt_t ) valid_input   = new();
 
 task gen_package( mailbox #( pkt_t ) _tx_fifo );
 
@@ -126,45 +104,66 @@ for( int i = 0; i < MAX_PACKET; i++ )
   end
 endtask;
 
-task send_package ( mailbox #( logic [DWIDTH_TB-1:0] ) _data_gen );
+task sort_queue( mailbox #( pkt_t ) _valid_tx_fifo,
+                 mailbox #( pkt_t ) _valid_input
+               );
+pkt_t   pk_new;
 
-logic [DWIDTH_TB-1:0] data_new;
-int distance_start_end;
-int cnt_data_received;
-
-distance_start_end = $urandom_range( MAX_DATA_SEND-3, 2 );
-
-while( ( cnt_data_received != distance_start_end ) )
+while( _valid_tx_fifo.num() != 0 )
   begin
-    _data_gen.get( data_new );
-    snk_data_i_tb = data_new;
-    
-    if( cnt_data_received == 0 )
-      begin
-        snk_startofpacket_i_tb = 1'b1;
-        snk_valid_i_tb = 1'b1;
-        ##1;
-        snk_startofpacket_i_tb = 1'b0;
-        cnt_data_received++;
-      end
-    else if( cnt_data_received < distance_start_end )
-      begin
-        snk_valid_i_tb = $urandom_range( 1,0 );
-        if( snk_valid_i_tb )
-          cnt_data_received++;
-        ##1;
-      end
+    _valid_tx_fifo.get( pk_new );
+    pk_new.sort();
+    _valid_input.put( pk_new );
   end
-  if( cnt_data_received == distance_start_end )
-      begin
-        snk_endofpacket_i_tb = 1'b1;
-        ##1;
-        snk_valid_i_tb = 1'b0;
-        snk_endofpacket_i_tb = 1'b0;
-      end
-  cnt_data_received = 0;
+
 endtask
 
+task compare_result( mailbox #( pkt_t ) _rx_fifo,
+                     mailbox #( pkt_t ) _valid_input
+                   );
+
+pkt_t   pk_new_s;
+pkt_t   pk_new_r;
+
+int number_of_pk;
+
+bit _error;
+
+number_of_pk =_valid_input.num();
+
+if( _valid_input.num() != _rx_fifo.num() )
+  begin
+    $error("Number of packets mismatch!!");
+    _error = 1;
+  end
+else
+  begin
+    while( _valid_input.num() != 0 )
+      begin
+        _valid_input.get( pk_new_r );
+        _rx_fifo.get( pk_new_s );
+        if( pk_new_r != pk_new_s )
+          begin
+            $error("Number of data in packet %0d mismatches", number_of_pk-_valid_input.num());
+            _error = 1;
+          end
+        else
+          begin
+            for( int i = 0; i < pk_new_r.size(); i++ )
+              begin
+                if( pk_new_r[i] != pk_new_s[i] )
+                  begin
+                    $error("%0d element of packet %0d mismatches", i, number_of_pk-_valid_input.num());
+                    _error = 1;
+                  end
+              end
+          end
+      end
+    if( _error != 1'b1 )
+      $display("No error!!!");
+  end
+
+endtask
 
 initial 
   begin
@@ -172,34 +171,21 @@ initial
     srst_i_tb <= 1;
     ##1;
     srst_i_tb <= 0;
- 
- /////////////////////////////////////////
     ast_source_if.ready <= 1'b1;
+
     gen_package( tx_fifo );
-    avalon_st_p_send    = new( ast_sink_if, tx_fifo, rx_fifo );
-    avalon_st_p_receive = new( ast_source_if, tx_fifo, rx_fifo );
+    avalon_st_p_send    = new( ast_sink_if, tx_fifo, valid_tx_fifo, rx_fifo );
+    avalon_st_p_receive = new( ast_source_if, tx_fifo, valid_tx_fifo,rx_fifo );
 
     fork
       avalon_st_p_send.send_pk();
       avalon_st_p_receive.receive_pk();
     join
-    // ##(MAX_DATA_SEND*MAX_DATA_SEND);
-////////////////////////////////////////
-    // src_ready_i_tb <= 1'b1;
-    // gen_package( data_gen );
-    // send_package( data_gen );
-    // ##(MAX_DATA_SEND*MAX_DATA_SEND);
 
+    sort_queue( valid_tx_fifo, valid_input );
 
-    // gen_package( data_gen2 );
-    // send_package( data_gen2 );
-    // ##(MAX_DATA_SEND*MAX_DATA_SEND);
-    
-
-    // gen_package( data_gen3 );
-    // send_package( data_gen3 );
-    // ##(MAX_DATA_SEND*MAX_DATA_SEND);
-
+    compare_result( rx_fifo, valid_input );
+    $display("Test done!!!!");
     $stop();
 
   end

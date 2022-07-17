@@ -19,7 +19,6 @@ module Sorting #(
 );
 
 parameter AWIDTH = $clog2(MAX_PKT_LEN) + 1 ;
-// parameter MAX_INDEX = (MAX_PKT_LEN >> 1)+1;
 
 logic [AWIDTH-1:0] wr_addr;
 logic [AWIDTH-1:0] rd_addr;
@@ -29,17 +28,12 @@ logic              sending;
 logic              start_sending_out;
 
 integer word_received;
-// integer first_loop_ind;
-// logic [DWIDTH-1:0] tmp;
-
-// logic [DWIDTH-1:0] sort_mem [MAX_PKT_LEN+2:0];
 
 integer index;
 int     cnt;
 integer i;
 integer tmp_i;
 integer tmp_i1;
-// integer index;
 
 logic [AWIDTH-1:0] addr_a;
 logic [AWIDTH-1:0] addr_b;
@@ -224,7 +218,7 @@ always_comb
                 next_state = SORT_READ_S;
             end
           
-          if( cnt == word_received +1&& i > word_received ) //////////
+          if( cnt == word_received +1 && i > word_received ) //////////
             next_state = READ_S;
         end
       READ_S:
