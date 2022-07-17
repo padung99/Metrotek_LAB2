@@ -56,7 +56,7 @@ pk_avalon_st #(
   .WIDTH_MAX_PK ( MAX_PKT_LEN_TB )
 ) avalon_st_p_receive;
 
-pk_avalon_st avalon_st_p_receive;
+// pk_avalon_st avalon_st_p_receive;
 
 Sorting #(
   .DWIDTH              ( DWIDTH_TB           ),
