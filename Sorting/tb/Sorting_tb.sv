@@ -87,6 +87,7 @@ default clocking cb
   @( posedge clk_i_tb );
 endclocking
 
+//Declare 2 instances avalon-st
 avalon_st ast_sink_if(
   .clk( clk_i_tb )
 );
@@ -95,10 +96,10 @@ avalon_st ast_source_if(
   .clk( clk_i_tb )
 );
 
-//Declare class 
+
+//Declare object 
 pk_avalon_st avalon_st_p_send;
 pk_avalon_st avalon_st_p_receive;
-
 
 
 Sorting #(
