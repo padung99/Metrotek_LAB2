@@ -1,58 +1,7 @@
 `timescale 1 ps / 1 ps
-parameter MAX_PAKET = 13;
-//////////////////////////////////////////////////////////////////////
-class pk_avalon_st;
 
-
-mailbox #( logic[15:0] ) pk_data;
-
-virtual avalon_st avlst_if;
-
-`define cb @( posedge avlst_if.clk );
-
-// clocking cb
-//   @( posedge avlst_if.clk );
-// endclocking
-
-function new( virtual avalon_st _avlst_if, mailbox #( logic[15:0] ) _pk_data  );
-  this.avlst_if = _avlst_if;
-  this.pk_data  = _pk_data;
-endfunction
-
-//Send pk to snk
-task send_pk( );
-
-logic [15:0] new_pk_data;
-int total_data;
-
-total_data = pk_data.num();
-
-while( pk_data.num() != 0 )
-  begin
-    // if( avlst_if.ready )
-      begin
-        pk_data.get( new_pk_data );
-        avlst_if.data = new_pk_data;
-        // if( _pk_data.num() == total_data-2 || _pk_data.num() == total_data- 10 ||  _pk_data.num() == total_data-25 ||  _pk_data.num() == total_data-45 )
-        //   begin
-        //     avlst_if.sop = 1;
-        //     avlst_if.valid = 1;
-        //     ##1;
-        //     avlst_if.sop = 0;
-        //     avlst_if.valid = $urandom_range(1,0);
-        //   end
-        `cb;
-      end
-  end
-
-endtask
-
-task receive_pk();
-endtask
-
-endclass
-
-////////////////////////////////////////////////////////////////
+import avlst_pk::*;
+// parameter MAX_PAKET = 13;
 
 module Sorting_tb;
 
@@ -77,7 +26,7 @@ logic              src_startofpacket_o_tb;
 logic              src_endofpacket_o_tb;
 logic              src_ready_i_tb;
 
-mailbox #( logic[15:0] ) pk_data = new();
+mailbox #( logic[DWIDTH_TB-1:0] ) pk_data = new();
 
 initial
   forever
@@ -96,11 +45,18 @@ avalon_st ast_source_if(
   .clk( clk_i_tb )
 );
 
-
 //Declare object 
-pk_avalon_st avalon_st_p_send;
-pk_avalon_st avalon_st_p_receive;
+pk_avalon_st #(
+  .DWIDTH_PK    ( DWIDTH_TB      ),
+  .WIDTH_MAX_PK ( MAX_PKT_LEN_TB )
+) avalon_st_p_send;
 
+pk_avalon_st #(
+  .DWIDTH_PK    ( DWIDTH_TB      ),
+  .WIDTH_MAX_PK ( MAX_PKT_LEN_TB )
+) avalon_st_p_receive;
+
+pk_avalon_st avalon_st_p_receive;
 
 Sorting #(
   .DWIDTH              ( DWIDTH_TB           ),
@@ -199,16 +155,20 @@ endtask
 
 initial 
   begin
-    gen_package( data_gen );
-    avalon_st_p_send = new( ast_sink_if, data_gen );
-
-    src_ready_i_tb <= 1'b1;
-
+    
     srst_i_tb <= 1;
     ##1;
     srst_i_tb <= 0;
-    
+ 
+ /////////////////////////////////////////
+    ast_source_if.ready <= 1'b1;
+    gen_package( data_gen );
+    avalon_st_p_send = new( ast_sink_if, data_gen );
+
     avalon_st_p_send.send_pk();
+    ##(MAX_DATA_SEND*MAX_DATA_SEND);
+////////////////////////////////////////
+    // src_ready_i_tb <= 1'b1;
     // gen_package( data_gen );
     // send_package( data_gen );
     // ##(MAX_DATA_SEND*MAX_DATA_SEND);
@@ -222,7 +182,7 @@ initial
     // gen_package( data_gen3 );
     // send_package( data_gen3 );
     // ##(MAX_DATA_SEND*MAX_DATA_SEND);
-    ##200;
+
     $stop();
 
   end
