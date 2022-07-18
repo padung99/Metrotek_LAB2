@@ -247,6 +247,7 @@ always_ff @( posedge clk_i )
   end
 
 //Control RAM
+//Using parallel sorting
 always_ff @( posedge clk_i )
   begin
     if( state == IDLE_S )
