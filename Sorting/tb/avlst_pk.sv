@@ -27,8 +27,90 @@ function new( virtual avalon_st  _avlst_if,
   this.valid_tx_fifo = _valid_tx_fifo;
   this.rx_fifo       = _rx_fifo;
 endfunction
+//Test special case
+task send_1_element();
 
-//Send multiple pk to snk
+pkt_t new_tx_fifo;
+pkt_t new_valid_tx_fifo;
+int total_data;
+
+int sop_random;
+int eop_random;
+
+int time_delay;
+int total_pk;
+
+total_pk = tx_fifo.num();
+
+$display("###Sending random packet with 1 element via avalon-st");
+while( tx_fifo.num() != 0 )
+  begin
+    $display("[%0d]", total_pk-tx_fifo.num());
+    new_tx_fifo = {};
+    new_valid_tx_fifo = {};
+    tx_fifo.get( new_tx_fifo );
+
+    total_data = 1;
+    sop_random = 0;
+    eop_random = 0;
+
+    for( int i = 0; i < new_tx_fifo.size(); i++ )
+      begin
+        avlst_if.data = new_tx_fifo[i];
+        if( avlst_if.ready )
+          begin
+            if( i == sop_random )
+              begin
+                avlst_if.sop   = 1'b1;
+                avlst_if.eop   = 1'b1;
+                avlst_if.valid = 1'b1;
+                `cb;
+                avlst_if.sop   = 1'b0;
+                avlst_if.eop   = 1'b0;
+                avlst_if.valid = 1'b0;
+
+                new_valid_tx_fifo.push_back( avlst_if.data );
+                valid_tx_fifo.put( new_valid_tx_fifo );
+                // $display( "Send [%0d]: %0d",new_valid_tx_fifo.size(), avlst_if.data );
+              end
+            // else if( i == eop_random -1)
+            //   begin
+            //     avlst_if.eop   = 1'b1;
+            //     avlst_if.valid = 1'b1;
+            //     `cb;
+            //     avlst_if.eop   = 1'b0;
+            //     avlst_if.valid = 1'b0;
+
+            //     new_valid_tx_fifo.push_back( avlst_if.data);
+            //     // $display( "Send [%0d]: %0d",new_valid_tx_fifo.size(), avlst_if.data );
+            //     valid_tx_fifo.put( new_valid_tx_fifo );
+            //     new_valid_tx_fifo = {};
+            //   end
+            // else 
+            //   begin
+            //     avlst_if.sop   = 1'b0;
+            //     avlst_if.eop   = 1'b0;
+            //     avlst_if.valid = $urandom_range( 1,0 );
+            //     if( avlst_if.valid == 1'b1 )
+            //       begin
+            //         new_valid_tx_fifo.push_back( avlst_if.data );
+            //         // $display( "Send [%0d]: %0d",new_valid_tx_fifo.size(), avlst_if.data );
+            //       end
+            //     `cb;
+            //   end
+          end
+      end
+
+    // time_delay = total_data*total_data +100;
+    repeat( 100 )
+      `cb;
+
+  end
+
+endtask
+
+
+//Send multiple random pk to snk
 task send_pk( );
 
 pkt_t new_tx_fifo;
@@ -39,9 +121,13 @@ int sop_random;
 int eop_random;
 
 int time_delay;
+int total_pk;
 
+total_pk = tx_fifo.num();
+$display("###Sending random packet via avalon-st");
 while( tx_fifo.num() != 0 )
   begin
+    $display("[%0d]", total_pk-tx_fifo.num());
     new_tx_fifo = {};
     new_valid_tx_fifo = {};
     tx_fifo.get( new_tx_fifo );
@@ -60,22 +146,22 @@ while( tx_fifo.num() != 0 )
                 avlst_if.sop   = 1'b1;
                 avlst_if.valid = 1'b1;
                 `cb;
-                avlst_if.sop = 1'b0;
+                avlst_if.sop   = 1'b0;
                 avlst_if.valid = 1'b0;
 
                 new_valid_tx_fifo.push_back( avlst_if.data );
-                $display( "Send [%0d]: %0d",new_valid_tx_fifo.size(), avlst_if.data );
+                // $display( "Send [%0d]: %0d",new_valid_tx_fifo.size(), avlst_if.data );
               end
             else if( i == eop_random -1)
               begin
                 avlst_if.eop   = 1'b1;
                 avlst_if.valid = 1'b1;
                 `cb;
-                avlst_if.eop = 1'b0;
+                avlst_if.eop   = 1'b0;
                 avlst_if.valid = 1'b0;
 
                 new_valid_tx_fifo.push_back( avlst_if.data);
-                $display( "Send [%0d]: %0d",new_valid_tx_fifo.size(), avlst_if.data );
+                // $display( "Send [%0d]: %0d",new_valid_tx_fifo.size(), avlst_if.data );
                 valid_tx_fifo.put( new_valid_tx_fifo );
                 new_valid_tx_fifo = {};
               end
@@ -83,19 +169,19 @@ while( tx_fifo.num() != 0 )
               begin
                 avlst_if.sop   = 1'b0;
                 avlst_if.eop   = 1'b0;
-                avlst_if.valid = $urandom_range(1,0);
+                avlst_if.valid = $urandom_range( 1,0 );
                 if( avlst_if.valid == 1'b1 )
                   begin
                     new_valid_tx_fifo.push_back( avlst_if.data );
-                    $display( "Send [%0d]: %0d",new_valid_tx_fifo.size(), avlst_if.data );
+                    // $display( "Send [%0d]: %0d",new_valid_tx_fifo.size(), avlst_if.data );
                   end
                 `cb;
               end
           end
       end
 
-    time_delay = total_data*total_data + 2*total_data+10;
-    for( int i =0; i< time_delay; i++ )
+    time_delay = total_data*total_data+100;
+    for( int i = 0; i< time_delay; i++ )
       `cb;
 
   end
@@ -112,13 +198,13 @@ forever
     if( avlst_if.valid == 1'b1 && avlst_if.eop != 1'b1 )
       begin
         new_rx_fifo.push_back( avlst_if.data );
-        $display( "Receive [%0d]: %0d",new_rx_fifo.size(), avlst_if.data );
+        // $display( "Receive [%0d]: %0d",new_rx_fifo.size(), avlst_if.data );
       end
     else if( avlst_if.valid == 1'b1 && avlst_if.eop == 1'b1 )
       begin
         new_rx_fifo.push_back( avlst_if.data );
-        $display( "Receive [%0d]: %0d",new_rx_fifo.size(), avlst_if.data );
-        $display( "\n" );
+        // $display( "Receive [%0d]: %0d",new_rx_fifo.size(), avlst_if.data );
+        // $display( "\n" );
 
         rx_fifo.put( new_rx_fifo );
         new_rx_fifo = {}; //Reset packet

@@ -1,6 +1,6 @@
 module Sorting #(
   parameter DWIDTH      = 16,
-  parameter MAX_PKT_LEN = 1000
+  parameter MAX_PKT_LEN = 250
 ) (
   input  logic              clk_i,
   input  logic              srst_i,
@@ -28,7 +28,7 @@ logic              sending;
 logic              start_sending_out;
 
 integer word_received;
-
+logic              detect_only_1_elm;
 int     cnt;
 integer i;
 integer tmp_i0;
@@ -132,7 +132,7 @@ always_ff @( posedge clk_i )
         if( rd_addr > word_received )
           start_sending_out <= 1'b0;
 
-        if( (cnt >= word_received + 1))
+        if( cnt >= word_received+1 ) ////////////
           start_sending_out <= 1'b1;
       end
   end
@@ -245,6 +245,46 @@ always_ff @( posedge clk_i )
     else if( state == SORT_READ_S )
       i <= cnt % 2;
   end
+
+
+////////////////////////////////////////////////////
+
+always_ff @( posedge clk_i )
+  begin
+    //When only 1 element
+    // if( state == IDLE_S )
+      if( snk_valid_i && snk_endofpacket_i )
+        begin
+          if( wr_addr == '0 )
+            begin
+              start_sending_out <= 1'b1;
+              detect_only_1_elm <= 1'b1;
+            end
+        end
+
+      if( detect_only_1_elm == 1'b1 )
+        begin
+          if( rd_addr == 1 )
+            begin
+              src_endofpacket_o   <= 1'b1;
+              src_startofpacket_o <= 1'b1;
+              src_valid_o         <= 1'b1;  
+            end
+
+          if( rd_addr == 2 )
+            begin
+              src_endofpacket_o   <= 1'b0;
+              src_startofpacket_o <= 1'b0;
+              src_valid_o         <= 1'b0;
+              detect_only_1_elm   <= 1'b0;
+              rd_addr             <= 0; //Reset rd addr
+            end
+        end
+
+
+
+  end
+//////////////////////////////////////////////////
 
 //Control RAM
 //Using parallel sorting

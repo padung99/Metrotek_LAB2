@@ -1,12 +1,12 @@
 `timescale 1 ps / 1 ps
 
 import avlst_pk::*;
-parameter MAX_PACKET = 205;
+parameter MAX_PACKET = 250;
 
 module Sorting_tb;
 
 parameter DWIDTH_TB      = 16;
-parameter MAX_PKT_LEN_TB = 22;
+parameter MAX_PKT_LEN_TB = 20;
 
 
 bit                clk_i_tb;
@@ -70,17 +70,21 @@ mailbox #( pkt_t ) rx_fifo       = new();
 mailbox #( pkt_t ) valid_tx_fifo = new();
 mailbox #( pkt_t ) valid_input   = new();
 
-task gen_package( mailbox #( pkt_t ) _tx_fifo );
+task gen_package( input int _max_pk_len,
+                        int _min_pk_len,
+                        int _max_pk_num,
+                  mailbox #( pkt_t ) _tx_fifo
+                );
 
 
 pkt_t pk_new;
 
 int   number_of_data;
 
-for( int i = 0; i < MAX_PACKET; i++ )
+for( int i = 0; i < _max_pk_num; i++ )
   begin
     logic [DWIDTH_TB-1:0] data_new;
-    number_of_data = $urandom_range( MAX_PKT_LEN_TB,6 );
+    number_of_data = $urandom_range( _max_pk_len, _min_pk_len );
     for( int j = 0; j < number_of_data; j++ )
       begin
         data_new = $urandom_range( 2**DWIDTH_TB-1,0 );
@@ -161,10 +165,16 @@ initial
     srst_i_tb <= 0;
     ast_source_if.ready <= 1'b1;
 
-    gen_package( tx_fifo );
+    gen_package( 8, 8, MAX_PACKET, tx_fifo );
     avalon_st_p_send    = new( ast_sink_if, tx_fifo, valid_tx_fifo, rx_fifo );
     avalon_st_p_receive = new( ast_source_if, tx_fifo, valid_tx_fifo,rx_fifo );
 
+    // fork
+    //   avalon_st_p_send.send_1_element();
+    //   avalon_st_p_receive.receive_pk();
+    // join
+
+    /////Test with multiple random packet
     fork
       avalon_st_p_send.send_pk();
       avalon_st_p_receive.receive_pk();
