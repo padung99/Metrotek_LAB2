@@ -42,7 +42,7 @@ int total_pk;
 
 total_pk = tx_fifo.num();
 
-$display("###Sending random packet with 1 element via avalon-st");
+// $display("###Sending random packet with 1 element via avalon-st");
 while( tx_fifo.num() != 0 )
   begin
     $display("[%0d]", total_pk-tx_fifo.num());
@@ -73,31 +73,6 @@ while( tx_fifo.num() != 0 )
                 valid_tx_fifo.put( new_valid_tx_fifo );
                 // $display( "Send [%0d]: %0d",new_valid_tx_fifo.size(), avlst_if.data );
               end
-            // else if( i == eop_random -1)
-            //   begin
-            //     avlst_if.eop   = 1'b1;
-            //     avlst_if.valid = 1'b1;
-            //     `cb;
-            //     avlst_if.eop   = 1'b0;
-            //     avlst_if.valid = 1'b0;
-
-            //     new_valid_tx_fifo.push_back( avlst_if.data);
-            //     // $display( "Send [%0d]: %0d",new_valid_tx_fifo.size(), avlst_if.data );
-            //     valid_tx_fifo.put( new_valid_tx_fifo );
-            //     new_valid_tx_fifo = {};
-            //   end
-            // else 
-            //   begin
-            //     avlst_if.sop   = 1'b0;
-            //     avlst_if.eop   = 1'b0;
-            //     avlst_if.valid = $urandom_range( 1,0 );
-            //     if( avlst_if.valid == 1'b1 )
-            //       begin
-            //         new_valid_tx_fifo.push_back( avlst_if.data );
-            //         // $display( "Send [%0d]: %0d",new_valid_tx_fifo.size(), avlst_if.data );
-            //       end
-            //     `cb;
-            //   end
           end
       end
 
@@ -111,7 +86,7 @@ endtask
 
 
 //Send multiple random pk to snk
-task send_pk( );
+task send_pk( input bit full_mode = 0 );
 
 pkt_t new_tx_fifo;
 pkt_t new_valid_tx_fifo;
@@ -124,10 +99,10 @@ int time_delay;
 int total_pk;
 
 total_pk = tx_fifo.num();
-$display("###Sending random packet via avalon-st");
+// $display("###Sending random packet via avalon-st");
 while( tx_fifo.num() != 0 )
   begin
-    $display("[%0d]", total_pk-tx_fifo.num());
+    // $display("[%0d]", total_pk-tx_fifo.num());
     new_tx_fifo = {};
     new_valid_tx_fifo = {};
     tx_fifo.get( new_tx_fifo );
@@ -169,7 +144,10 @@ while( tx_fifo.num() != 0 )
               begin
                 avlst_if.sop   = 1'b0;
                 avlst_if.eop   = 1'b0;
-                avlst_if.valid = $urandom_range( 1,0 );
+                if( full_mode != 1'b1 )
+                  avlst_if.valid = $urandom_range( 1,0 );
+                else
+                  avlst_if.valid = 1'b1;
                 if( avlst_if.valid == 1'b1 )
                   begin
                     new_valid_tx_fifo.push_back( avlst_if.data );
@@ -180,7 +158,7 @@ while( tx_fifo.num() != 0 )
           end
       end
 
-    time_delay = total_data*total_data+100;
+    time_delay = total_data*total_data+150;
     for( int i = 0; i< time_delay; i++ )
       `cb;
 
