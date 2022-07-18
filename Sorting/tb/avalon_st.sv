@@ -1,7 +1,12 @@
-interface avalon_st ( input clk );
+interface avalon_st #( 
+  parameter symbolsPerBeat = 2 //bytes
+) ( input clk );
+  
+  parameter DATA_W = 8*symbolsPerBeat; //bits
+  
   logic valid;
   logic ready;
-  logic [15:0] data;
+  logic [DATA_W-1:0] data;
   logic sop;
   logic eop;
 

@@ -1,17 +1,18 @@
 `timescale 1 ps / 1 ps
 
 import avlst_pk::*;
-parameter MAX_PACKET = 105;
+parameter MAX_PACKET = 205;
 
 module Sorting_tb;
 
-parameter DWIDTH_TB = 16;
-parameter MAX_PKT_LEN_TB = 14;
+parameter DWIDTH_TB      = 16;
+parameter MAX_PKT_LEN_TB = 22;
 
 
 bit                clk_i_tb;
 logic              srst_i_tb;
 
+parameter symbol = DWIDTH_TB/8;
 
 initial
   forever
@@ -22,11 +23,15 @@ default clocking cb
 endclocking
 
 //Declare 2 instances avalon-st
-avalon_st ast_sink_if(
+avalon_st #( 
+  .symbolsPerBeat( symbol )
+) ast_sink_if(
   .clk( clk_i_tb )
 );
 
-avalon_st ast_source_if(
+avalon_st #( 
+  .symbolsPerBeat( symbol )
+) ast_source_if(
   .clk( clk_i_tb )
 );
 
@@ -68,9 +73,9 @@ mailbox #( pkt_t ) valid_input   = new();
 task gen_package( mailbox #( pkt_t ) _tx_fifo );
 
 
-pkt_t                 pk_new;
+pkt_t pk_new;
 
-int                   number_of_data;
+int   number_of_data;
 
 for( int i = 0; i < MAX_PACKET; i++ )
   begin
