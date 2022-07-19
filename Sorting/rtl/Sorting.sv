@@ -354,7 +354,7 @@ always_ff @( posedge clk_i )
       end
   end
 
-////////////////////////////Control delay variable//////////////////////
+////////////////////////////Control delay signal//////////////////////
 //DELAY "i" and "i+1"
 always_ff @( posedge clk_i )
   begin
