@@ -445,7 +445,7 @@ always_ff @( posedge clk_i )
       end
     else if( state == SORT_READ_S )
       begin
-        //Reset addresses depent on cnt (odd/even)
+        //Reset addresses depend on cnt (odd/even)
         addr_a <= (AWIDTH)'(cnt % 2);
         addr_b <= (AWIDTH)'(( cnt % 2 ) + 1);
       end
