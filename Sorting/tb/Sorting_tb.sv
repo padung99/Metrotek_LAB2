@@ -1,7 +1,7 @@
 `timescale 1 ps / 1 ps
 
 import avlst_pk::*;
-parameter MAX_PACKET = 250;
+parameter MAX_PACKET = 150;
 
 module Sorting_tb;
 
@@ -140,7 +140,7 @@ bit _error;
 
 number_of_pk =_valid_input.num();
 
-$display("Packet sended: %0d, packet received: %0d", _valid_input.num(), _rx_fifo.num());
+$display("Valid packet sended: %0d, valid packet received: %0d", _valid_input.num(), _rx_fifo.num());
 if( _valid_input.num() != _rx_fifo.num() )
   begin
     $error("Number of packets mismatch!!");
@@ -185,7 +185,7 @@ initial
 
     ////////////////////////////Test with multiple random packet
     $display("###Testing with multiple random packets!!!");
-    gen_package( 20, 6, MAX_PACKET, 0,0,0, tx_fifo );
+    gen_package( 20, 2, MAX_PACKET, 0,0,0, tx_fifo );
     avalon_st_p_send    = new( ast_sink_if, tx_fifo, valid_tx_fifo, rx_fifo );
     avalon_st_p_receive = new( ast_source_if, tx_fifo, valid_tx_fifo,rx_fifo );
 

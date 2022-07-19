@@ -27,18 +27,24 @@ logic              sending;
 
 logic              start_sending_out;
 
-integer word_received;
+// integer data_received;
 logic              detect_only_1_elm;
-int     cnt;
-integer i;
-integer tmp_i0;
-integer tmp_i1;
+// int     cnt;
+// integer i;
+// integer tmp_i0;
+// integer tmp_i1;
 
 logic [AWIDTH-1:0] addr_a;
 logic [AWIDTH-1:0] addr_b;
 
 logic [AWIDTH-1:0] tmp_addr_a;
 logic [AWIDTH-1:0] tmp_addr_b;
+
+logic [AWIDTH-1:0] data_received;
+logic [AWIDTH:0]   cnt;
+logic [AWIDTH:0]   i;
+logic [AWIDTH:0]   tmp_i0;
+logic [AWIDTH:0]   tmp_i1;
 
 logic [DWIDTH-1:0] data_a;
 logic [DWIDTH-1:0] data_b;
@@ -52,6 +58,10 @@ logic              wr_en_b;
 
 logic [DWIDTH-1:0] q_a;
 logic [DWIDTH-1:0] q_b;
+
+logic              last_sort;
+logic              delay_odd_cycle;
+logic              delay_even_cycle;
 
 enum logic [2:0] {
   IDLE_S,
@@ -96,7 +106,7 @@ always_ff @( posedge clk_i )
         if( snk_valid_i && snk_endofpacket_i )
           begin
             wr_addr       <= (AWIDTH)'(0);
-            word_received <= wr_addr;
+            data_received <= wr_addr;
           end
         
       end
@@ -129,10 +139,10 @@ always_ff @( posedge clk_i )
       start_sending_out <= 1'b0;
     else
       begin
-        if( rd_addr > word_received )
+        if( rd_addr > data_received )
           start_sending_out <= 1'b0;
 
-        if( cnt >= word_received+1 ) ////////////
+        if( cnt >= data_received+1 ) ////////////
           start_sending_out <= 1'b1;
       end
   end
@@ -145,65 +155,105 @@ always_ff @( posedge clk_i )
       state <= next_state;
   end
 
+//Condition when sort is running to last cycle
+//Ex: With bubble sort: N = 8, last cycle is the situation when i = 8 and j = 8
+//The condition below is used for parallel sorting
+assign last_sort        = ( cnt == data_received + 1 ) && ( i > data_received );
+
+assign delay_odd_cycle  = ( i <=  data_received + 2*(cnt%2) );
+assign delay_even_cycle = ( i <=  data_received + (cnt[0] ^ 1'b1) );
+
 always_comb
   begin
     next_state = state;
     case( state )
+    //////////////////////////Wating valid signal///////////////////////////
       IDLE_S:
         begin
           if( snk_valid_i && ( wr_addr < MAX_PKT_LEN-1 ) )
             next_state = WRITE_S;
         end
-      
+  
+      /////////////////////Writing input data to mem ////////////////////////
       WRITE_S:
         begin
           if( sending == 1'b0 && start_sending_out != 1'b1 )
             begin
-              if( cnt <= word_received )
+              if( cnt <= data_received )
                 begin
                   next_state = SORT_READ_S;
                 end
             end
 
+          //Use this when detecting 1 element
+          //When module detects only 1 element sended
+          //FSM will run only 3 states: WRITE_S and READ_S and IDLE_S 
           if( start_sending_out == 1'b1 )
             begin
-              if( rd_addr <= word_received )
+              if( rd_addr <= data_received )
                 next_state = READ_S;
             end
         end
 
+      /////////////////////////Sorting states///////////////////////////
+      //SORT_READ_S: Read value q_a and q_b (RAM's output) when addr_a = 0 and addr_b =  1(first 2 addresses)
+      //Ex: q_a = mem[0]; q_b = mem[1]
+
+      //SORT_WRITE_S: Write value back to RAM when 2 data has been swaped
+      //Ex: if( mem[i] > mem[i+1] ) { swap(mem[i], mem[i+1] }    (1)
+      //"i"and "i+1" are addr_a and addr_b of RAM, mem[i] is q_a, mem[i+1] is q_b
+      //(1) is equivalent to  if( q_a > q_b ) { addr_a <= i+1, addr_b <= i }
+
+      //SORT_READ_NEXT_S: Read value q_a, q_b (RAM's output) when addr_a = i and addr_b = i+1 (i != 0)
+      //Ex: q_a = mem[i]; q_b = mem[i+1]
       SORT_READ_S:
         begin
           next_state = SORT_WRITE_S;
-          if( cnt == word_received+1 && i > word_received )
+
+          if( last_sort ) ///
             next_state = READ_S;
         end
       
       SORT_WRITE_S:
         begin
           next_state = SORT_READ_NEXT_S;
-          if( cnt == word_received+1 && i > word_received )
+          if( last_sort ) ////
             next_state = READ_S;
         end
 
+      //"cnt" is counter of big loop, "i" is sub-counter(counter of small loop inside big loop)
+      //When data_received is even (Ex: data_received = 8)
+      //"even" cycle (cnt is even) will be: i = 0 (swap 0/1), 2(swap 2/3), 4(swap 4/5),6(swap 6/7), 8 will remain unchange
+      //"odd" cycle (cnt is odd) will be: 0 will remain unchange, i = 1(swap 1/2),3(swap 3/4),5 (swap 5/6),7 (swap 7/8)
+      //if we want to swap 2 elements
+      //we need 2 clk (1 for jumping to SORT_WRITE_S state, and 1 for swaping(nonblocking assginment will delay 1 clk))
+      //In "odd" cycle i = 1,3,5,7 swap(1/2) will be when i = 5 (in one clk, i will increase by 2)
+      //and swap(7/8) will be when i =  11
+      //Similarly when data_received is odd
+
+      //SUMMARY:
+      //When data_received is even, delay 2 clk will be in "odd" cycle
+      //When data_received is odd, delay 2 clk will be in "even" cycle
       SORT_READ_NEXT_S:
         begin
-          if( word_received %2 == 0 )
+          if( data_received %2 == 0 )
             begin
-              if( i <=  word_received + 2*(cnt%2))
+              //Delay 2 clk to swap 2 elements in "odd" cycle
+              if( delay_odd_cycle)
                 next_state = SORT_WRITE_S;
               else
                 next_state = SORT_READ_S;
             end
           else
             begin
-              if( i <=  word_received + (cnt[0] ^ 1'b1) )
+              //Delay 2 clk to swap 2 elements in "even" cycle
+              if( delay_even_cycle )
                 next_state = SORT_WRITE_S;
               else
                 next_state = SORT_READ_S;
             end
           
-          if( cnt == word_received +1 && i > word_received )
+          if( last_sort ) ///
             next_state = READ_S;
         end
       READ_S:
@@ -217,22 +267,26 @@ always_comb
 //Control counter
 always_ff @( posedge clk_i )
   begin
-    if( srst_i || snk_valid_i && snk_startofpacket_i )
+    if( srst_i )
       cnt <= 0;
-    
-    if( state == IDLE_S )
-      cnt <= 0;
-    else if( state == SORT_READ_NEXT_S  )
+    else
       begin
-        if( ( word_received % 2 ) == 0)
+        if( snk_valid_i && snk_startofpacket_i )
+          cnt <= 0;
+        if( state == IDLE_S )
+          cnt <= 0;
+        else if( state == SORT_READ_NEXT_S  )
           begin
-            if( i > word_received + 2*(cnt%2))
-              cnt <= cnt + 1;
-          end
-        else
-          begin
-            if( i > word_received  + (cnt[0] ^ 1'b1) ) 
-              cnt <= cnt + 1;
+            if( ( data_received % 2 ) == 0)
+              begin
+                if( !delay_odd_cycle ) //i > data_received  + 2*(cnt%2)
+                  cnt <= cnt + 1;
+              end
+            else
+              begin
+                if( !delay_even_cycle ) 
+                  cnt <= cnt + 1;
+              end
           end
       end
   end
@@ -280,9 +334,6 @@ always_ff @( posedge clk_i )
               rd_addr             <= 0; //Reset rd addr
             end
         end
-
-
-
   end
 //////////////////////////////////////////////////
 
@@ -345,41 +396,57 @@ always_ff @( posedge clk_i )
       begin
         wr_en_a <= 1'b0;
         addr_a  <= i[AWIDTH-1:0];
-        if( word_received %2 == 0 )
-          begin
-            if( i <= word_received  +2*(cnt%2))
-              begin
-                tmp_addr_a <= i[AWIDTH-1:0];
-                tmp_i0     <= tmp_addr_a;
-                tmp_data_a <= q_a;
-              end
-            
-            if( i <= word_received  + 2*(cnt%2) )
-              begin
-                tmp_addr_b <= i[AWIDTH-1:0]+ (AWIDTH)'(1);
-                tmp_i1     <= tmp_addr_b;
-                tmp_data_b <= q_b;
-              end
-          end
-        else
-          begin
-            if( i <= word_received + (cnt[0] ^ 1'b1))
-              begin
-                tmp_addr_a <= i[AWIDTH-1:0];
-                tmp_i0     <= tmp_addr_a;
-                tmp_data_a <= q_a;
-              end
-            
-            if( i <= word_received  + (cnt[0] ^ 1'b1))
-              begin
-                tmp_addr_b <= i[AWIDTH-1:0]+ (AWIDTH)'(1);
-                tmp_i1     <= tmp_addr_b;
-                tmp_data_b <= q_b;
-              end
-          end
-
         wr_en_b <= 1'b0;
         addr_b  <= i[AWIDTH-1:0]+ (AWIDTH)'(1); 
+        
+        if( ( data_received %2 == 0 && delay_odd_cycle ) || ( data_received %2 != 0 && delay_even_cycle ) )
+          begin
+            tmp_addr_a <= i[AWIDTH-1:0];
+            tmp_i0     <= tmp_addr_a;
+            tmp_data_a <= q_a;
+        //   end
+        
+        // if( i <= data_received  + 2*(cnt%2) )
+        //   begin
+            tmp_addr_b <= i[AWIDTH-1:0]+ (AWIDTH)'(1);
+            tmp_i1     <= tmp_addr_b;
+            tmp_data_b <= q_b;
+          end
+
+
+        // if( data_received %2 == 0 )
+        //   begin
+        //     if( delay_odd_cycle )
+        //       begin
+        //         tmp_addr_a <= i[AWIDTH-1:0];
+        //         tmp_i0     <= tmp_addr_a;
+        //         tmp_data_a <= q_a;
+        //     //   end
+            
+        //     // if( i <= data_received  + 2*(cnt%2) )
+        //     //   begin
+        //         tmp_addr_b <= i[AWIDTH-1:0]+ (AWIDTH)'(1);
+        //         tmp_i1     <= tmp_addr_b;
+        //         tmp_data_b <= q_b;
+        //       end
+        //   end
+        // else
+        //   begin
+        //     if( delay_even_cycle )
+        //       begin
+        //         tmp_addr_a <= i[AWIDTH-1:0];
+        //         tmp_i0     <= tmp_addr_a;
+        //         tmp_data_a <= q_a;
+        //     //   end
+            
+        //     // if( i <= data_received  + (cnt[0] ^ 1'b1))
+        //     //   begin
+        //         tmp_addr_b <= i[AWIDTH-1:0]+ (AWIDTH)'(1);
+        //         tmp_i1     <= tmp_addr_b;
+        //         tmp_data_b <= q_b;
+        //       end
+        //   end
+
       end
 
     else if( state == READ_S )
@@ -387,7 +454,7 @@ always_ff @( posedge clk_i )
         if( start_sending_out == 1'b1 )
           begin
             //Delay 2 clk
-            if( rd_addr <= word_received +2)
+            if( rd_addr <= data_received +2)
               begin
                 wr_en_a    <= 1'b0;
                 addr_a     <= rd_addr;
@@ -434,9 +501,9 @@ always_ff @( posedge clk_i )
     else
       if( start_sending_out == 1'b1 )
         begin
-          if( rd_addr == word_received + 2 )
+          if( rd_addr == data_received + 2 )
             src_endofpacket_o <= 1'b1;
-          if( rd_addr > word_received + 2 )
+          if( rd_addr > data_received + 2 )
             src_endofpacket_o <= 1'b0;
         end
   end
@@ -448,7 +515,7 @@ always_ff @( posedge clk_i )
         src_valid_o <= 1'b1;
       end
 
-    if( rd_addr > word_received + 2)
+    if( rd_addr > data_received + 2)
       begin
         src_valid_o <= 1'b0;
       end

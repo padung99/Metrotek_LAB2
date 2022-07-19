@@ -27,6 +27,7 @@ function new( virtual avalon_st  _avlst_if,
   this.valid_tx_fifo = _valid_tx_fifo;
   this.rx_fifo       = _rx_fifo;
 endfunction
+
 //Test special case
 task send_1_element();
 
@@ -75,11 +76,8 @@ while( tx_fifo.num() != 0 )
 
     repeat( 100 )
       `cb;
-
   end
-
 endtask
-
 
 //Send multiple random pk to snk
 task send_pk( input bit full_mode = 0 );
@@ -151,8 +149,10 @@ while( tx_fifo.num() != 0 )
       end
 
     time_delay = total_data*total_data+150;
-    for( int i = 0; i< time_delay; i++ )
+    repeat( time_delay )
       `cb;
+    // for( int i = 0; i< time_delay; i++ )
+    //   `cb;
 
   end
 
