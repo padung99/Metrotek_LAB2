@@ -62,6 +62,7 @@ logic [DWIDTH-1:0] q_b;
 logic              last_sort;
 logic              delay_odd_cycle;
 logic              delay_even_cycle;
+logic              end_writing;
 
 enum logic [2:0] {
   IDLE_S,
@@ -158,7 +159,7 @@ always_ff @( posedge clk_i )
       start_sending_out <= 1'b0;
     else
       begin
-        if( rd_addr > data_received )
+        if( rd_addr > data_received ) ////////////
           start_sending_out <= 1'b0;
 
         if( cnt >= data_received+1 ) ////////////
@@ -184,10 +185,23 @@ always_ff @( posedge clk_i )
 //Condition when sort is running to last cycle
 //Ex: With bubble sort: N = 8, last cycle is the situation when i = 8 and j = 8
 //The condition below is used for parallel sorting
+
+//////////////////Testing/////////////////
 assign last_sort        = ( cnt == data_received + 1 ) && ( i > data_received );
 
 assign delay_odd_cycle  = ( i <=  data_received + 2*(cnt%2) );
 assign delay_even_cycle = ( i <=  data_received + (cnt[0] ^ 1'b1) );
+assign end_writing  = ( sending == 1'b0 ) &&
+                ( start_sending_out != 1'b1 ) &&
+                ( cnt <= data_received );
+
+// always_ff @( posedge clk_i )
+//   begin
+//     last_sort <= ( cnt == data_received + 1 -1) && ( i > data_received -1);
+//     delay_odd_cycle  <= ( i <=  data_received + 2*(cnt%2) -1);
+//     delay_even_cycle <= ( i <=  data_received + (cnt[0] ^ 1'b1) -1);
+//     end_writing  <= ( sending == 1'b0 ) && ( start_sending_out != 1'b1 ) && ( cnt <= data_received -1);
+//   end
 
 always_comb
   begin
@@ -196,16 +210,17 @@ always_comb
     //////////////////////////Wating valid signal///////////////////////////
       IDLE_S:
         begin
-          if( snk_valid_i && ( wr_addr < MAX_PKT_LEN-1 ) )
+          // if( snk_valid_i && ( wr_addr < MAX_PKT_LEN-1 ) )////////
+          if( snk_valid_i ) 
             next_state = WRITE_S;
         end
   
       /////////////////////Writing input data to mem ////////////////////////
       WRITE_S:
         begin
-          if( sending == 1'b0 && start_sending_out != 1'b1 )
+          // if( sending == 1'b0 && start_sending_out != 1'b1 )
             begin
-              if( cnt <= data_received )
+              if( end_writing )
                 begin
                   next_state = SORT_READ_S;
                 end
@@ -266,24 +281,7 @@ always_comb
             next_state = SORT_WRITE_S; 
           else
             next_state = SORT_READ_S;
-
-          // if( data_received %2 == 0 )
-          //   begin
-          //     //Delay 2 clk to swap 2 elements in "odd" cycle
-          //     if( delay_odd_cycle)
-          //       next_state = SORT_WRITE_S;
-          //     else
-          //       next_state = SORT_READ_S;
-          //   end
-          // else
-          //   begin
-          //     //Delay 2 clk to swap 2 elements in "even" cycle
-          //     if( delay_even_cycle )
-          //       next_state = SORT_WRITE_S;
-          //     else
-          //       next_state = SORT_READ_S;
-          //   end
-          
+      
           if( last_sort ) ///
             next_state = READ_S;
         end
@@ -336,35 +334,22 @@ always_ff @( posedge clk_i )
 
 always_ff @( posedge clk_i )
   begin
-    //When only 1 element
-    // if( state == IDLE_S )
-      if( snk_valid_i && snk_endofpacket_i )
-        begin
-          if( wr_addr == '0 )
-            begin
-              // start_sending_out <= 1'b1;
-              detect_only_1_elm <= 1'b1;
-            end
-        end
+  //When only 1 element
+    if( snk_valid_i && snk_endofpacket_i )
+      begin
+        if( wr_addr == '0 )
+          begin
+            detect_only_1_elm <= 1'b1;
+          end
+      end
 
-      if( detect_only_1_elm == 1'b1 )
-        begin
-          // if( rd_addr == 1 )
-          //   begin
-          //     // src_endofpacket_o   <= 1'b1;
-          //     // src_startofpacket_o <= 1'b1;
-          //     // src_valid_o         <= 1'b1;  
-          //   end
-
-          if( rd_addr == 2 )
-            begin
-              // src_endofpacket_o   <= 1'b0;
-              // src_startofpacket_o <= 1'b0;
-              // src_valid_o         <= 1'b0;
-              detect_only_1_elm   <= 1'b0; /////////////////////
-              // rd_addr             <= 0; //Reset rd addr
-            end
-        end
+    if( detect_only_1_elm == 1'b1 )
+      begin
+        if( rd_addr == 2 )
+          begin
+            detect_only_1_elm   <= 1'b0; /////////////////////
+          end
+      end
   end
 //////////////////////////////////////////////////
 
@@ -435,48 +420,11 @@ always_ff @( posedge clk_i )
             tmp_addr_a <= i[AWIDTH-1:0];
             tmp_i0     <= tmp_addr_a;
             tmp_data_a <= q_a;
-        //   end
-        
-        // if( i <= data_received  + 2*(cnt%2) )
-        //   begin
+
             tmp_addr_b <= i[AWIDTH-1:0]+ (AWIDTH)'(1);
             tmp_i1     <= tmp_addr_b;
             tmp_data_b <= q_b;
           end
-
-
-        // if( data_received %2 == 0 )
-        //   begin
-        //     if( delay_odd_cycle )
-        //       begin
-        //         tmp_addr_a <= i[AWIDTH-1:0];
-        //         tmp_i0     <= tmp_addr_a;
-        //         tmp_data_a <= q_a;
-        //     //   end
-            
-        //     // if( i <= data_received  + 2*(cnt%2) )
-        //     //   begin
-        //         tmp_addr_b <= i[AWIDTH-1:0]+ (AWIDTH)'(1);
-        //         tmp_i1     <= tmp_addr_b;
-        //         tmp_data_b <= q_b;
-        //       end
-        //   end
-        // else
-        //   begin
-        //     if( delay_even_cycle )
-        //       begin
-        //         tmp_addr_a <= i[AWIDTH-1:0];
-        //         tmp_i0     <= tmp_addr_a;
-        //         tmp_data_a <= q_a;
-        //     //   end
-            
-        //     // if( i <= data_received  + (cnt[0] ^ 1'b1))
-        //     //   begin
-        //         tmp_addr_b <= i[AWIDTH-1:0]+ (AWIDTH)'(1);
-        //         tmp_i1     <= tmp_addr_b;
-        //         tmp_data_b <= q_b;
-        //       end
-        //   end
 
       end
 
@@ -525,22 +473,17 @@ always_ff @( posedge clk_i )
               src_startofpacket_o <= 1'b0;
           end
 
+      //Detect 1 element received
       if( detect_only_1_elm == 1'b1 )
         begin
           if( rd_addr == 1 )
             begin
-              // src_endofpacket_o   <= 1'b1;
               src_startofpacket_o <= 1'b1;
-              // src_valid_o         <= 1'b1;  
             end
 
           if( rd_addr == 2 )
             begin
-              // src_endofpacket_o   <= 1'b0;
               src_startofpacket_o <= 1'b0;
-              // src_valid_o         <= 1'b0;
-              // detect_only_1_elm   <= 1'b0;
-              // rd_addr             <= 0; //Reset rd addr
             end
         end
       end
@@ -563,18 +506,12 @@ always_ff @( posedge clk_i )
         begin
           if( rd_addr == 1 )
             begin
-              src_endofpacket_o   <= 1'b1;
-              // src_startofpacket_o <= 1'b1;
-              // src_valid_o         <= 1'b1;  
+              src_endofpacket_o   <= 1'b1;  
             end
 
           if( rd_addr == 2 )
             begin
               src_endofpacket_o   <= 1'b0;
-              // src_startofpacket_o <= 1'b0;
-              // src_valid_o         <= 1'b0;
-              // detect_only_1_elm   <= 1'b0;
-              // rd_addr             <= 0; //Reset rd addr
             end
         end
       end
@@ -597,18 +534,12 @@ always_ff @( posedge clk_i )
         begin
           if( rd_addr == 1 )
             begin
-              // src_endofpacket_o   <= 1'b1;
-              // src_startofpacket_o <= 1'b1;
               src_valid_o         <= 1'b1;  
             end
 
           if( rd_addr == 2 )
             begin
-              // src_endofpacket_o   <= 1'b0;
-              // src_startofpacket_o <= 1'b0;
               src_valid_o         <= 1'b0;
-              // detect_only_1_elm   <= 1'b0;
-              // rd_addr             <= 0; //Reset rd addr
             end
         end
   end
