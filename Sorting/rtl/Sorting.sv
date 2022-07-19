@@ -157,9 +157,9 @@ always_ff @( posedge clk_i )
       state <= next_state;
   end
 
-//Condition when sort is running to last cycle
+//Condition when sorting is running to last cycle
 //Ex: With bubble sort: N = 8, last cycle is the situation when i = 8 and j = 8
-//The condition below is used for parallel sorting
+//The condition bellow is used for parallel sorting
 assign last_sort        = ( cnt == data_received + 1 ) && ( i > data_received );
 
 assign delay_odd_cycle  = ( i <=  data_received + 2*(cnt%2) );
@@ -174,14 +174,14 @@ always_comb
   begin
     next_state = state;
     case( state )
-    //////////////////////////Wating valid signal///////////////////////////
+    //////////////////////////Waiting valid signal///////////////////////////
       IDLE_S:
         begin
           if( begin_writing ) 
             next_state = WRITE_S;
         end
   
-      /////////////////////Writing input data to mem ////////////////////////
+      /////////////////////Writing input data to RAM ////////////////////////
       WRITE_S:
         begin
           if( end_writing )
@@ -212,14 +212,14 @@ always_comb
         begin
           next_state = SORT_WRITE_S;
 
-          if( last_sort ) ///
+          if( last_sort )
             next_state = READ_S;
         end
       
       SORT_WRITE_S:
         begin
           next_state = SORT_READ_NEXT_S;
-          if( last_sort ) ////
+          if( last_sort )
             next_state = READ_S;
         end
 
