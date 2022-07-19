@@ -134,10 +134,10 @@ always_ff @( posedge clk_i )
       start_sending_out <= 1'b0;
     else
       begin
-        if( rd_addr > data_received ) ////////////
+        if( rd_addr > data_received ) 
           start_sending_out <= 1'b0;
 
-        if( cnt >= data_received+1 ) ////////////
+        if( cnt >= data_received+1 )
           start_sending_out <= 1'b1;
       
       //Detect only 1 element received
@@ -187,7 +187,7 @@ always_comb
           if( end_writing )
             next_state = SORT_READ_S;
 
-          //Use this when detecting 1 element
+          //Use this condition when detecting 1 element
           //When module detects only 1 element sended
           //FSM will run only 3 states: WRITE_S and READ_S and IDLE_S 
           if( start_sending_out == 1'b1 )
@@ -556,7 +556,7 @@ always_ff @( posedge clk_i )
     if( start_sending_out == 1'b1 && rd_addr == 2 )
       src_valid_o <= 1'b1;
 
-    if( rd_addr > data_received + 2)
+    if( rd_addr > data_received + 2 )
       src_valid_o <= 1'b0;
 
     if( detect_only_1_elm == 1'b1 )
