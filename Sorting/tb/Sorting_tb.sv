@@ -183,18 +183,19 @@ initial
     srst_i_tb <= 0;
     ast_source_if.ready <= 1'b1;
 
-    /////Test with multiple random packet
+    ////////////////////////////Test with multiple random packet
     $display("###Testing with multiple random packets!!!");
     gen_package( 20, 6, MAX_PACKET, 0,0,0, tx_fifo );
     avalon_st_p_send    = new( ast_sink_if, tx_fifo, valid_tx_fifo, rx_fifo );
     avalon_st_p_receive = new( ast_source_if, tx_fifo, valid_tx_fifo,rx_fifo );
 
     fork
-      avalon_st_p_send.send_pk(1);
+      avalon_st_p_send.send_pk();
       avalon_st_p_receive.receive_pk();
     join
     sort_queue( valid_tx_fifo, valid_input );
     compare_result( rx_fifo, valid_input );
+    $display("\n");
 
     /////////////////////////////////////////////////////////////////////////
     //Reset all mailbox
@@ -213,6 +214,26 @@ initial
     join
     sort_queue( valid_tx_fifo, valid_input );
     compare_result( rx_fifo, valid_input );
+    $display("\n");
+
+    /////////////////////////////////////////////////////////////////////////
+    //Reset all mailbox
+    tx_fifo       = new();
+    rx_fifo       = new(); 
+    valid_tx_fifo = new();
+    valid_input   = new();
+
+    $display("###Testing with 2 elements in packets!!!");
+    gen_package( 2, 2, MAX_PACKET, 0,0,0, tx_fifo );
+    avalon_st_p_send    = new( ast_sink_if, tx_fifo, valid_tx_fifo, rx_fifo );
+    avalon_st_p_receive = new( ast_source_if, tx_fifo, valid_tx_fifo,rx_fifo );
+    fork
+      avalon_st_p_send.send_pk();
+      avalon_st_p_receive.receive_pk();
+    join
+    sort_queue( valid_tx_fifo, valid_input );
+    compare_result( rx_fifo, valid_input );
+    $display("\n");
 
     ///////////////////////////////////////////////////////////////////////
     //Reset all mailbox
@@ -231,6 +252,7 @@ initial
     join
     sort_queue( valid_tx_fifo, valid_input );
     compare_result( rx_fifo, valid_input );
+    $display("\n");
 
     ////////////////////////////////////////////////////////////////////////
     //Reset all mailbox
@@ -249,6 +271,7 @@ initial
     join
     sort_queue( valid_tx_fifo, valid_input );
     compare_result( rx_fifo, valid_input );
+    $display("\n");
 
     ////////////////////////////////////////////////////////////////////////
     //Reset all mailbox
