@@ -121,6 +121,25 @@ always_ff @( posedge clk_i )
       begin
         rd_addr <= (AWIDTH)'(0);
       end
+
+      if( detect_only_1_elm == 1'b1 )
+        begin
+          // if( rd_addr == 1 )
+          //   begin
+          //     src_endofpacket_o   <= 1'b1;
+          //     src_startofpacket_o <= 1'b1;
+          //     src_valid_o         <= 1'b1;  
+          //   end
+
+          if( rd_addr == 2 )
+            begin
+              // src_endofpacket_o   <= 1'b0;
+              // src_startofpacket_o <= 1'b0;
+              // src_valid_o         <= 1'b0;
+              // detect_only_1_elm   <= 1'b0;
+              rd_addr             <= 0; //Reset rd addr
+            end
+        end
   end
 
 always_ff @( posedge clk_i )
@@ -144,6 +163,13 @@ always_ff @( posedge clk_i )
 
         if( cnt >= data_received+1 ) ////////////
           start_sending_out <= 1'b1;
+      
+      //Detect only 1 element received
+      if( snk_valid_i && snk_endofpacket_i )
+        begin
+          if( wr_addr == '0 )
+            start_sending_out <= 1'b1;
+        end
       end
   end
 
@@ -236,22 +262,27 @@ always_comb
       //When data_received is odd, delay 2 clk will be in "even" cycle
       SORT_READ_NEXT_S:
         begin
-          if( data_received %2 == 0 )
-            begin
-              //Delay 2 clk to swap 2 elements in "odd" cycle
-              if( delay_odd_cycle)
-                next_state = SORT_WRITE_S;
-              else
-                next_state = SORT_READ_S;
-            end
+          if( ( data_received %2 == 0 && delay_odd_cycle ) || ( data_received %2 != 0 && delay_even_cycle ) )
+            next_state = SORT_WRITE_S; 
           else
-            begin
-              //Delay 2 clk to swap 2 elements in "even" cycle
-              if( delay_even_cycle )
-                next_state = SORT_WRITE_S;
-              else
-                next_state = SORT_READ_S;
-            end
+            next_state = SORT_READ_S;
+
+          // if( data_received %2 == 0 )
+          //   begin
+          //     //Delay 2 clk to swap 2 elements in "odd" cycle
+          //     if( delay_odd_cycle)
+          //       next_state = SORT_WRITE_S;
+          //     else
+          //       next_state = SORT_READ_S;
+          //   end
+          // else
+          //   begin
+          //     //Delay 2 clk to swap 2 elements in "even" cycle
+          //     if( delay_even_cycle )
+          //       next_state = SORT_WRITE_S;
+          //     else
+          //       next_state = SORT_READ_S;
+          //   end
           
           if( last_sort ) ///
             next_state = READ_S;
@@ -311,27 +342,27 @@ always_ff @( posedge clk_i )
         begin
           if( wr_addr == '0 )
             begin
-              start_sending_out <= 1'b1;
+              // start_sending_out <= 1'b1;
               detect_only_1_elm <= 1'b1;
             end
         end
 
       if( detect_only_1_elm == 1'b1 )
         begin
-          if( rd_addr == 1 )
-            begin
-              src_endofpacket_o   <= 1'b1;
-              src_startofpacket_o <= 1'b1;
-              src_valid_o         <= 1'b1;  
-            end
+          // if( rd_addr == 1 )
+          //   begin
+          //     // src_endofpacket_o   <= 1'b1;
+          //     // src_startofpacket_o <= 1'b1;
+          //     // src_valid_o         <= 1'b1;  
+          //   end
 
           if( rd_addr == 2 )
             begin
-              src_endofpacket_o   <= 1'b0;
-              src_startofpacket_o <= 1'b0;
-              src_valid_o         <= 1'b0;
-              detect_only_1_elm   <= 1'b0;
-              rd_addr             <= 0; //Reset rd addr
+              // src_endofpacket_o   <= 1'b0;
+              // src_startofpacket_o <= 1'b0;
+              // src_valid_o         <= 1'b0;
+              detect_only_1_elm   <= 1'b0; /////////////////////
+              // rd_addr             <= 0; //Reset rd addr
             end
         end
   end
@@ -484,14 +515,35 @@ always_ff @( posedge clk_i )
     if( srst_i )
       src_startofpacket_o <= 1'b0;
     else
-      if( start_sending_out == 1'b1 )
+      begin
+        if( start_sending_out == 1'b1 )
+          begin
+            //Delay 2 clk
+            if( rd_addr == 0 + 2 )
+              src_startofpacket_o <= 1'b1;
+            if( rd_addr == 1 + 2 )
+              src_startofpacket_o <= 1'b0;
+          end
+
+      if( detect_only_1_elm == 1'b1 )
         begin
-          //Delay 2 clk
-          if( rd_addr == 0 + 2 )
-            src_startofpacket_o <= 1'b1;
-          if( rd_addr == 1 + 2 )
-            src_startofpacket_o <= 1'b0;
+          if( rd_addr == 1 )
+            begin
+              // src_endofpacket_o   <= 1'b1;
+              src_startofpacket_o <= 1'b1;
+              // src_valid_o         <= 1'b1;  
+            end
+
+          if( rd_addr == 2 )
+            begin
+              // src_endofpacket_o   <= 1'b0;
+              src_startofpacket_o <= 1'b0;
+              // src_valid_o         <= 1'b0;
+              // detect_only_1_elm   <= 1'b0;
+              // rd_addr             <= 0; //Reset rd addr
+            end
         end
+      end
   end 
 
 always_ff @( posedge clk_i )
@@ -499,13 +551,34 @@ always_ff @( posedge clk_i )
     if( srst_i )
       src_endofpacket_o <= 1'b0;
     else
-      if( start_sending_out == 1'b1 )
+      begin
+        if( start_sending_out == 1'b1 )
+          begin
+            if( rd_addr == data_received + 2 )
+              src_endofpacket_o <= 1'b1;
+            if( rd_addr > data_received + 2 )
+              src_endofpacket_o <= 1'b0;
+          end
+      if( detect_only_1_elm == 1'b1 )
         begin
-          if( rd_addr == data_received + 2 )
-            src_endofpacket_o <= 1'b1;
-          if( rd_addr > data_received + 2 )
-            src_endofpacket_o <= 1'b0;
+          if( rd_addr == 1 )
+            begin
+              src_endofpacket_o   <= 1'b1;
+              // src_startofpacket_o <= 1'b1;
+              // src_valid_o         <= 1'b1;  
+            end
+
+          if( rd_addr == 2 )
+            begin
+              src_endofpacket_o   <= 1'b0;
+              // src_startofpacket_o <= 1'b0;
+              // src_valid_o         <= 1'b0;
+              // detect_only_1_elm   <= 1'b0;
+              // rd_addr             <= 0; //Reset rd addr
+            end
         end
+      end
+
   end
 
 always_ff @( posedge clk_i )
@@ -519,6 +592,25 @@ always_ff @( posedge clk_i )
       begin
         src_valid_o <= 1'b0;
       end
+
+      if( detect_only_1_elm == 1'b1 )
+        begin
+          if( rd_addr == 1 )
+            begin
+              // src_endofpacket_o   <= 1'b1;
+              // src_startofpacket_o <= 1'b1;
+              src_valid_o         <= 1'b1;  
+            end
+
+          if( rd_addr == 2 )
+            begin
+              // src_endofpacket_o   <= 1'b0;
+              // src_startofpacket_o <= 1'b0;
+              src_valid_o         <= 1'b0;
+              // detect_only_1_elm   <= 1'b0;
+              // rd_addr             <= 0; //Reset rd addr
+            end
+        end
   end
 
 endmodule
