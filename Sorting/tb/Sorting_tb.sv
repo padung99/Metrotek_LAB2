@@ -1,7 +1,7 @@
 `timescale 1 ps / 1 ps
 
 import avlst_pk::*;
-parameter MAX_PACKET = 150;
+parameter MAX_PACKET = 250;
 
 module Sorting_tb;
 
@@ -183,7 +183,7 @@ initial
     srst_i_tb <= 0;
     ast_source_if.ready <= 1'b1;
 
-    ////////////////////////////Test with multiple random packet
+    //////////////////////Test with multiple random packet/////////////////////
     $display("###Testing with multiple random packets!!!");
     gen_package( 20, 2, MAX_PACKET, 0,0,0, tx_fifo );
     avalon_st_p_send    = new( ast_sink_if, tx_fifo, valid_tx_fifo, rx_fifo );

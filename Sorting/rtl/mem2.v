@@ -37,7 +37,7 @@
 `timescale 1 ps / 1 ps
 // synopsys translate_on
 module mem2 #(
-  parameter DWIDTH_MEM = 16,
+  parameter DWIDTH_MEM     = 16,
   parameter DWIDTH_MAX_PKT = 8
 ) (
 	address_a,
