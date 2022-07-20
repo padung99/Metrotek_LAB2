@@ -1,7 +1,7 @@
 `timescale 1 ps / 1 ps
 
 import avlst_pk::*;
-parameter MAX_PACKET = 250;
+parameter MAX_PACKET = 8;
 
 module Sorting_tb;
 
@@ -85,6 +85,12 @@ pkt_t pk_new;
 
 int   number_of_data;
 int N;
+
+if( ( _max_pk_len > MAX_PKT_LEN_TB ) || ( _power_of_2 && (2**_max_pk_len > MAX_PKT_LEN_TB) ))
+  begin
+    $error("Maximum data in packets has to be smaller than %0d", MAX_PKT_LEN_TB);
+    $stop();
+  end
 
 for( int i = 0; i < _max_pk_num; i++ )
   begin
@@ -187,9 +193,9 @@ initial
     srst_i_tb <= 0;
     ast_source_if.ready <= 1'b1;
 
-    //////////////////////Test with multiple random packet/////////////////////
+    // //////////////////////Test with multiple random packet/////////////////////
     $display("###Testing with multiple random packets!!!");
-    gen_package( 20, 2, MAX_PACKET, 0,0,0,0, tx_fifo );
+    gen_package( 20, 8, MAX_PACKET, 0,0,0,0, tx_fifo );
     avalon_st_p_send    = new( ast_sink_if, tx_fifo, valid_tx_fifo, rx_fifo );
     avalon_st_p_receive = new( ast_source_if, tx_fifo, valid_tx_fifo,rx_fifo );
 
@@ -247,7 +253,7 @@ initial
     valid_input   = new();
 
     $display("###Testing with sorted elements in packets!!!");
-    gen_package( 22, 7, MAX_PACKET, 1,0,0,0, tx_fifo );
+    gen_package( 20, 7, MAX_PACKET, 1,0,0,0, tx_fifo );
     avalon_st_p_send    = new( ast_sink_if, tx_fifo, valid_tx_fifo, rx_fifo );
     avalon_st_p_receive = new( ast_source_if, tx_fifo, valid_tx_fifo,rx_fifo );
     fork
@@ -266,7 +272,7 @@ initial
     valid_input   = new();
 
     $display("###Testing with sorted elements in reverse order!!!");
-    gen_package( 22, 7, MAX_PACKET, 0,1,0,0, tx_fifo );
+    gen_package( 20, 7, MAX_PACKET, 0,1,0,0, tx_fifo );
     avalon_st_p_send    = new( ast_sink_if, tx_fifo, valid_tx_fifo, rx_fifo );
     avalon_st_p_receive = new( ast_source_if, tx_fifo, valid_tx_fifo,rx_fifo );
     fork
@@ -285,7 +291,7 @@ initial
     valid_input   = new();
 
     $display("###Testing with maximum elements in power of 2!!!");
-    gen_package( 5, 2, MAX_PACKET, 0,0,1,0, tx_fifo );
+    gen_package( 4, 2, MAX_PACKET, 0,0,1,0, tx_fifo );
     avalon_st_p_send    = new( ast_sink_if, tx_fifo, valid_tx_fifo, rx_fifo );
     avalon_st_p_receive = new( ast_source_if, tx_fifo, valid_tx_fifo,rx_fifo );
     fork

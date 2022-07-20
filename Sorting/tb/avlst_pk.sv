@@ -151,8 +151,6 @@ while( tx_fifo.num() != 0 )
     time_delay = total_data*total_data+150;
     repeat( time_delay )
       `cb;
-    // for( int i = 0; i< time_delay; i++ )
-    //   `cb;
 
   end
 

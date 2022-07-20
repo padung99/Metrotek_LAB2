@@ -243,7 +243,7 @@ always_comb
           else
             next_state = SORT_READ_S;
       
-          if( last_sort ) ///
+          if( last_sort )
             next_state = READ_S;
         end
       READ_S:
