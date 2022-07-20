@@ -18,7 +18,7 @@ module Sorting #(
   input  logic              src_ready_i
 );
 
-localparam AWIDTH = $clog2(MAX_PKT_LEN) + 1 ;
+localparam AWIDTH = $clog2(MAX_PKT_LEN);
 
 logic [AWIDTH-1:0] wr_addr;
 logic [AWIDTH-1:0] rd_addr;
@@ -59,6 +59,8 @@ logic              delay_odd_cycle;
 logic              delay_even_cycle;
 logic              end_writing;
 logic              begin_writing;
+logic              data_received_even;
+logic              data_received_odd;
 
 enum logic [2:0] {
   IDLE_S,
@@ -169,6 +171,9 @@ assign end_writing      = ( sending == 1'b0 ) &&
                           ( start_sending_out != 1'b1 ) &&
                           ( cnt <= data_received );
 
+//Check odd/even
+assign data_received_even  = !data_received[0];
+assign data_received_odd   = data_received[0];
 
 always_comb
   begin
@@ -238,7 +243,7 @@ always_comb
       //When data_received is odd, delay 2 clk will be in "EVEN" cycle
       SORT_READ_NEXT_S:
         begin
-          if( ( data_received %2 == 0 && delay_odd_cycle ) || ( data_received %2 != 0 && delay_even_cycle ) )
+          if( ( data_received_even && delay_odd_cycle ) || ( data_received_odd && delay_even_cycle ) )
             next_state = SORT_WRITE_S; 
           else
             next_state = SORT_READ_S;
@@ -267,12 +272,12 @@ always_ff @( posedge clk_i )
           cnt <= '0;
         else if( state == SORT_READ_NEXT_S  )
           begin
-            if( ( data_received % 2 ) == 0)
+            if( data_received_even )
               begin
                 if( !delay_odd_cycle ) //i > data_received  + 2*(cnt%2)
                   cnt <= cnt + (AWIDTH+1)'(1);
               end
-            else
+            else if( data_received_odd )
               begin
                 if( !delay_even_cycle ) 
                   cnt <= cnt + (AWIDTH+1)'(1);
@@ -347,7 +352,7 @@ always_ff @( posedge clk_i )
       end
     else if( state == READ_S )
       begin
-        if( ( start_sending_out == 1'b1 ) && ( rd_addr <= data_received + 2 ) )
+        if( ( start_sending_out == 1'b1 ) && ( rd_addr <= ( data_received + 2) ) )
           //Delay 2 clk
           // Need only 1 port to read out data
             wr_en_a <= 1'b0; 
@@ -365,7 +370,7 @@ always_ff @( posedge clk_i )
       end
     else if( state == SORT_READ_NEXT_S )
       begin
-        if( ( data_received % 2 == 0 && delay_odd_cycle ) || ( data_received %2 != 0 && delay_even_cycle ) )
+        if( ( data_received_even && delay_odd_cycle ) || ( data_received_odd && delay_even_cycle ) )
           begin
             tmp_i0 <= tmp_addr_a;
             tmp_i1 <= tmp_addr_b;
@@ -383,7 +388,7 @@ always_ff @( posedge clk_i )
       end
     else if( state == SORT_READ_NEXT_S )
       begin
-        if( ( data_received %2 == 0 && delay_odd_cycle ) || ( data_received %2 != 0 && delay_even_cycle ) )
+        if( ( data_received_even && delay_odd_cycle ) || ( data_received_odd && delay_even_cycle ) )
           begin
             tmp_addr_a <= i[AWIDTH-1:0];
             tmp_addr_b <= i[AWIDTH-1:0]+ (AWIDTH)'(1);
@@ -402,7 +407,7 @@ always_ff @( posedge clk_i )
       end
     else if( state == SORT_READ_NEXT_S )
       begin
-        if( ( data_received %2 == 0 && delay_odd_cycle ) || ( data_received %2 != 0 && delay_even_cycle ) )
+        if( ( data_received_even && delay_odd_cycle ) || ( data_received_odd && delay_even_cycle ) )
           begin
             //Delay data
             tmp_data_a <= q_a;
@@ -468,7 +473,7 @@ always_ff @( posedge clk_i )
         if( start_sending_out == 1'b1 )
           begin
             //Delay 2 clk
-            if( rd_addr <= data_received +2 )
+            if( rd_addr <= ( data_received + 2 ) )
               addr_a <= rd_addr;
           end
       end
@@ -479,7 +484,7 @@ always_ff @( posedge clk_i )
   begin
     if( state == READ_S )
       begin
-        if( ( start_sending_out == 1'b1 ) && ( rd_addr <= data_received +2 ) )
+        if( ( start_sending_out == 1'b1 ) && ( rd_addr <= ( data_received + 2 ) ) )
           src_data_o <= q_a;
       end
   end
@@ -533,9 +538,9 @@ always_ff @( posedge clk_i )
       begin
         if( start_sending_out == 1'b1 )
           begin
-            if( rd_addr == data_received + 2 )
+            if( rd_addr ==  ( data_received + 2 ) )
               src_endofpacket_o <= 1'b1;
-            if( rd_addr > data_received + 2 )
+            if( rd_addr >  ( data_received + 2 ) )
               src_endofpacket_o <= 1'b0;
           end
 
@@ -556,7 +561,7 @@ always_ff @( posedge clk_i )
     if( start_sending_out == 1'b1 && rd_addr == 2 )
       src_valid_o <= 1'b1;
 
-    if( rd_addr > data_received + 2 )
+    if( rd_addr >  ( data_received + 2 ) )
       src_valid_o <= 1'b0;
 
     if( detect_only_1_elm == 1'b1 )

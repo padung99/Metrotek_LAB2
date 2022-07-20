@@ -1,7 +1,7 @@
 `timescale 1 ps / 1 ps
 
 import avlst_pk::*;
-parameter MAX_PACKET = 8;
+parameter MAX_PACKET = 250;
 
 module Sorting_tb;
 
@@ -192,7 +192,9 @@ initial
     ##1;
     srst_i_tb <= 0;
     ast_source_if.ready <= 1'b1;
-
+    //Testing parameter
+    $display("DWIDTH_MAX_PKT_LEN %0d", $clog2(MAX_PKT_LEN_TB));
+    
     // //////////////////////Test with multiple random packet/////////////////////
     $display("###Testing with multiple random packets!!!");
     gen_package( 20, 8, MAX_PACKET, 0,0,0,0, tx_fifo );
