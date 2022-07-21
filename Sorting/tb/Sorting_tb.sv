@@ -5,8 +5,8 @@ parameter MAX_PACKET = 250;
 
 module Sorting_tb;
 
-parameter DWIDTH_TB      = 8;
-parameter MAX_PKT_LEN_TB = 16;
+parameter DWIDTH_TB      = 16;
+parameter MAX_PKT_LEN_TB = 20;
 
 
 bit                clk_i_tb;
