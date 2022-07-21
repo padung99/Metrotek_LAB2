@@ -290,6 +290,24 @@ initial
     valid_tx_fifo = new();
     valid_input   = new();
 
+    $display("###Testing with same elements in packets!!!");
+    gen_package( 16, 4, MAX_PACKET, 0,0,0,1, tx_fifo );
+    avalon_st_p_send    = new( ast_sink_if, tx_fifo, valid_tx_fifo, rx_fifo );
+    avalon_st_p_receive = new( ast_source_if, tx_fifo, valid_tx_fifo,rx_fifo );
+    fork
+      avalon_st_p_send.send_pk();
+      avalon_st_p_receive.receive_pk();
+    join
+    sort_queue( valid_tx_fifo, valid_input );
+    compare_result( rx_fifo, valid_input );
+
+    ////////////////////////////////////////////////////////////////////////
+    //Reset all mailbox
+    tx_fifo       = new();
+    rx_fifo       = new(); 
+    valid_tx_fifo = new();
+    valid_input   = new();
+
     $display("###Testing with maximum elements in power of 2!!!");
     gen_package( 4, 2, MAX_PACKET, 0,0,1,0, tx_fifo );
     avalon_st_p_send    = new( ast_sink_if, tx_fifo, valid_tx_fifo, rx_fifo );
@@ -301,24 +319,6 @@ initial
     sort_queue( valid_tx_fifo, valid_input );
     compare_result( rx_fifo, valid_input );
     $display("\n");
-
-    ////////////////////////////////////////////////////////////////////////
-    //Reset all mailbox
-    tx_fifo       = new();
-    rx_fifo       = new(); 
-    valid_tx_fifo = new();
-    valid_input   = new();
-
-    $display("###Testing with same elements in packets!!!");
-    gen_package( 16, 4, MAX_PACKET, 0,0,0,1, tx_fifo );
-    avalon_st_p_send    = new( ast_sink_if, tx_fifo, valid_tx_fifo, rx_fifo );
-    avalon_st_p_receive = new( ast_source_if, tx_fifo, valid_tx_fifo,rx_fifo );
-    fork
-      avalon_st_p_send.send_pk();
-      avalon_st_p_receive.receive_pk();
-    join
-    sort_queue( valid_tx_fifo, valid_input );
-    compare_result( rx_fifo, valid_input );
   
     $display("Test done!!!!");
     $stop();

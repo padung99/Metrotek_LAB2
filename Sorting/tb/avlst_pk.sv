@@ -74,7 +74,7 @@ while( tx_fifo.num() != 0 )
           end
       end
 
-    repeat( 100 )
+    repeat( 4 )
       `cb;
   end
 endtask

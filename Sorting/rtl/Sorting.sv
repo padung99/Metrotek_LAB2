@@ -1,5 +1,5 @@
 module Sorting #(
-  parameter DWIDTH      = 8,
+  parameter DWIDTH      = 16,
   parameter MAX_PKT_LEN = 250
 ) (
   input  logic              clk_i,
@@ -21,7 +21,7 @@ module Sorting #(
 localparam AWIDTH = $clog2(MAX_PKT_LEN);
 
 logic [AWIDTH-1:0] wr_addr;
-logic [AWIDTH:0] rd_addr;
+logic [AWIDTH:0]   rd_addr;
 
 logic              sending;
 
@@ -61,6 +61,7 @@ logic              end_writing;
 logic              begin_writing;
 logic              data_received_even;
 logic              data_received_odd;
+logic              cond_receive_1_elm;
 
 enum logic [2:0] {
   IDLE_S,
@@ -174,7 +175,8 @@ assign end_writing      = ( sending == 1'b0 ) &&
 //Check odd/even
 assign data_received_even  = !data_received[0];
 assign data_received_odd   = data_received[0];
-
+assign cond_receive_1_elm  = ( start_sending_out == 1'b1 ) &&
+                             ( rd_addr <= data_received );
 always_comb
   begin
     next_state = state;
@@ -195,11 +197,8 @@ always_comb
           //Use this condition when detecting 1 element
           //When module detects only 1 element sended
           //FSM will run only 3 states: WRITE_S and READ_S and IDLE_S 
-          if( start_sending_out == 1'b1 )
-            begin
-              if( rd_addr <= data_received )
-                next_state = READ_S;
-            end
+          if( cond_receive_1_elm )
+            next_state = READ_S;
         end
 
       /////////////////////////Sorting states///////////////////////////
@@ -474,7 +473,7 @@ always_ff @( posedge clk_i )
           begin
             //Delay 2 clk
             if( rd_addr <= ( data_received + 2 ) )
-              addr_a <= rd_addr;
+              addr_a <= rd_addr[AWIDTH-1:0];
           end
       end
   end
