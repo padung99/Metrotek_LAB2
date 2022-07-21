@@ -1,7 +1,7 @@
 `timescale 1 ps / 1 ps
 
 import avlst_pk::*;
-parameter MAX_PACKET = 100;
+parameter MAX_PACKET = 250;
 
 module Sorting_tb;
 
@@ -24,13 +24,13 @@ endclocking
 
 //Declare 2 instances avalon-st
 avalon_st #( 
-  .symbolsPerBeat( 1 )
+  .symbolsPerBeat( symbol )
 ) ast_sink_if(
   .clk( clk_i_tb )
 );
 
 avalon_st #( 
-  .symbolsPerBeat( 1 )
+  .symbolsPerBeat( symbol )
 ) ast_source_if(
   .clk( clk_i_tb )
 );
