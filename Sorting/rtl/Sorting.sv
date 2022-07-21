@@ -1,5 +1,5 @@
 module Sorting #(
-  parameter DWIDTH      = 16,
+  parameter DWIDTH      = 8,
   parameter MAX_PKT_LEN = 250
 ) (
   input  logic              clk_i,
@@ -21,7 +21,7 @@ module Sorting #(
 localparam AWIDTH = $clog2(MAX_PKT_LEN);
 
 logic [AWIDTH-1:0] wr_addr;
-logic [AWIDTH-1:0] rd_addr;
+logic [AWIDTH:0] rd_addr;
 
 logic              sending;
 
@@ -109,7 +109,7 @@ always_ff @( posedge clk_i )
 
 always_ff @( posedge clk_i )
   begin
-    if( start_sending_out == 1'b1 &&  src_ready_i )
+    if( start_sending_out == 1'b1 )
       rd_addr <= rd_addr + (AWIDTH)'(1);
 
     if( snk_valid_i && snk_startofpacket_i )
@@ -136,7 +136,7 @@ always_ff @( posedge clk_i )
       start_sending_out <= 1'b0;
     else
       begin
-        if( rd_addr > data_received ) 
+        if( rd_addr > data_received )  /////////
           start_sending_out <= 1'b0;
 
         if( cnt >= data_received+1 )
@@ -498,7 +498,11 @@ always_ff @( posedge clk_i )
         if( snk_endofpacket_i == 1'b1 )
           snk_ready_o <= 1'b0;
         
-        if( src_endofpacket_o == 1'b1 )
+        if( rd_addr >= ( data_received + 5 ) ) //Delay 2 clk after receiving all output data
+          snk_ready_o <= 1'b1;
+        
+        //Special case when module detect only 1 element received at the input
+        if( detect_only_1_elm && rd_addr == 2 )
           snk_ready_o <= 1'b1;
       end
   end

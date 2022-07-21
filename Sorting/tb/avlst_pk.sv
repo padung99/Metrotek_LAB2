@@ -12,7 +12,7 @@ mailbox #( pkt_t ) rx_fifo;
 mailbox #( pkt_t ) valid_tx_fifo;
 
 virtual avalon_st #(
-  .symbolsPerBeat( 2 )
+  .symbolsPerBeat( 1 )
 ) avlst_if;
 
 `define cb @( posedge avlst_if.clk );
@@ -91,6 +91,7 @@ int eop_random;
 
 int time_delay;
 int total_pk;
+int data_received;
 
 total_pk = tx_fifo.num();
 
@@ -116,7 +117,7 @@ while( tx_fifo.num() != 0 )
                 `cb;
                 avlst_if.sop   = 1'b0;
                 avlst_if.valid = 1'b0;
-
+                data_received++;
                 new_valid_tx_fifo.push_back( avlst_if.data );
               end
             else if( i == eop_random -1)
@@ -126,7 +127,7 @@ while( tx_fifo.num() != 0 )
                 `cb;
                 avlst_if.eop   = 1'b0;
                 avlst_if.valid = 1'b0;
-
+                data_received++;
                 new_valid_tx_fifo.push_back( avlst_if.data);
                 valid_tx_fifo.put( new_valid_tx_fifo );
                 new_valid_tx_fifo = {};
@@ -141,6 +142,7 @@ while( tx_fifo.num() != 0 )
                   avlst_if.valid = 1'b1;
                 if( avlst_if.valid == 1'b1 )
                   begin
+                    data_received++;
                     new_valid_tx_fifo.push_back( avlst_if.data );
                   end
                 `cb;
@@ -148,9 +150,10 @@ while( tx_fifo.num() != 0 )
           end
       end
 
-    time_delay = total_data*total_data+150;
+    time_delay = data_received*data_received+3*data_received+8;
     repeat( time_delay )
       `cb;
+    data_received = 0;
 
   end
 
