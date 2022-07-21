@@ -12,7 +12,7 @@ mailbox #( pkt_t ) rx_fifo;
 mailbox #( pkt_t ) valid_tx_fifo;
 
 virtual avalon_st #(
-  .symbolsPerBeat( 2 )
+  .symbolsPerBeat( 4 )
 ) avlst_if;
 
 `define cb @( posedge avlst_if.clk );

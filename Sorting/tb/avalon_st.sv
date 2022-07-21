@@ -1,5 +1,5 @@
 interface avalon_st #( 
-  parameter symbolsPerBeat = 2 //bytes
+  parameter symbolsPerBeat = 4 //bytes
 ) ( input clk );
   
   parameter DATA_W = 8*symbolsPerBeat; //bits

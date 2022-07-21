@@ -5,8 +5,8 @@ parameter MAX_PACKET = 250;
 
 module Sorting_tb;
 
-parameter DWIDTH_TB      = 16;
-parameter MAX_PKT_LEN_TB = 20;
+parameter DWIDTH_TB      = 32;
+parameter MAX_PKT_LEN_TB = 32;
 
 
 bit                clk_i_tb;
@@ -195,7 +195,7 @@ initial
  
     // //////////////////////Test with multiple random packet/////////////////////
     $display("###Testing with multiple random packets!!!");
-    gen_package( 16, 8, MAX_PACKET, 0,0,0,0, tx_fifo );
+    gen_package( 32, 8, MAX_PACKET, 0,0,0,0, tx_fifo );
     avalon_st_p_send    = new( ast_sink_if, tx_fifo, valid_tx_fifo, rx_fifo );
     avalon_st_p_receive = new( ast_source_if, tx_fifo, valid_tx_fifo,rx_fifo );
 
@@ -253,7 +253,7 @@ initial
     valid_input   = new();
 
     $display("###Testing with sorted elements in packets!!!");
-    gen_package( 16, 7, MAX_PACKET, 1,0,0,0, tx_fifo );
+    gen_package( 32, 7, MAX_PACKET, 1,0,0,0, tx_fifo );
     avalon_st_p_send    = new( ast_sink_if, tx_fifo, valid_tx_fifo, rx_fifo );
     avalon_st_p_receive = new( ast_source_if, tx_fifo, valid_tx_fifo,rx_fifo );
     fork
@@ -272,7 +272,7 @@ initial
     valid_input   = new();
 
     $display("###Testing with sorted elements in reverse order!!!");
-    gen_package( 16, 7, MAX_PACKET, 0,1,0,0, tx_fifo );
+    gen_package( 32, 7, MAX_PACKET, 0,1,0,0, tx_fifo );
     avalon_st_p_send    = new( ast_sink_if, tx_fifo, valid_tx_fifo, rx_fifo );
     avalon_st_p_receive = new( ast_source_if, tx_fifo, valid_tx_fifo,rx_fifo );
     fork
@@ -291,7 +291,7 @@ initial
     valid_input   = new();
 
     $display("###Testing with same elements in packets!!!");
-    gen_package( 16, 4, MAX_PACKET, 0,0,0,1, tx_fifo );
+    gen_package( 32, 4, MAX_PACKET, 0,0,0,1, tx_fifo );
     avalon_st_p_send    = new( ast_sink_if, tx_fifo, valid_tx_fifo, rx_fifo );
     avalon_st_p_receive = new( ast_source_if, tx_fifo, valid_tx_fifo,rx_fifo );
     fork
@@ -300,6 +300,7 @@ initial
     join
     sort_queue( valid_tx_fifo, valid_input );
     compare_result( rx_fifo, valid_input );
+    $display("\n");
 
     ////////////////////////////////////////////////////////////////////////
     //Reset all mailbox
@@ -309,7 +310,7 @@ initial
     valid_input   = new();
 
     $display("###Testing with maximum elements in power of 2!!!");
-    gen_package( 4, 2, MAX_PACKET, 0,0,1,0, tx_fifo );
+    gen_package( 5, 2, MAX_PACKET, 0,0,1,0, tx_fifo );
     avalon_st_p_send    = new( ast_sink_if, tx_fifo, valid_tx_fifo, rx_fifo );
     avalon_st_p_receive = new( ast_source_if, tx_fifo, valid_tx_fifo,rx_fifo );
     fork
@@ -318,8 +319,7 @@ initial
     join
     sort_queue( valid_tx_fifo, valid_input );
     compare_result( rx_fifo, valid_input );
-    $display("\n");
-  
+
     $display("Test done!!!!");
     $stop();
 
